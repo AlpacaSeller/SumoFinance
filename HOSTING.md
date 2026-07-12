@@ -1,7 +1,7 @@
-# HOSTING — pubblicare PFOS gratis
+# HOSTING — pubblicare Sumo Finance gratis
 
-PFOS non ha database né segreti lato server: servono solo le due API route proxy. Qualsiasi
-hosting che esegue Next.js va bene.
+Sumo Finance non ha database né segreti lato server: servono solo le due API route proxy.
+Qualsiasi hosting che esegue Next.js va bene.
 
 ## Opzione 1 — Vercel (consigliata)
 

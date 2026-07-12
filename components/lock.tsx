@@ -48,7 +48,7 @@ export function LockGate({ children }: { children: ReactNode }) {
   if (settingsRows === undefined) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
-        <div className="font-display text-2xl font-semibold text-brand-ink">PFOS</div>
+        <div className="font-display text-2xl font-semibold text-brand-ink">Sumo Finance</div>
       </div>
     );
   }
@@ -91,7 +91,7 @@ function LockScreen({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-brand px-6">
       <div className="flex flex-col items-center gap-2">
-        <div className="font-display text-4xl font-semibold text-white">PFOS</div>
+        <div className="font-display text-4xl font-semibold text-white">Sumo Finance</div>
         <p className="text-sm text-white/70">Il tuo sistema operativo finanziario</p>
       </div>
       <form

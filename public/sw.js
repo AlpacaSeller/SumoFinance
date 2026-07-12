@@ -1,9 +1,10 @@
-// ── Service worker PFOS: shell offline ──────────────────────────────────────
+// ── Service worker Sumo Finance: shell offline ───────────────────────────────
 // Strategia: network-first per le navigazioni (fallback alla shell in cache),
 // cache-first per gli asset statici. Le API (/api/*) non vengono mai cachate
 // qui: hanno già cache applicative dedicate (IndexedDB + cache server).
+// Il prefisso "pfos" della cache è un identificatore interno storico.
 
-const CACHE = "pfos-shell-v3";
+const CACHE = "pfos-shell-v4";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 // NON chiamiamo skipWaiting in install: il nuovo SW resta "waiting" finché

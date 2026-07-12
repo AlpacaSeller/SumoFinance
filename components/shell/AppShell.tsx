@@ -31,6 +31,7 @@ import {
 import { useLock } from "../lock";
 import { useTheme } from "../theme";
 import { useCommandPalette } from "../CommandPalette";
+import { SumoMascot } from "../Mascot";
 import { useTable } from "@/lib/storage";
 import type { Settings as SettingsType } from "@/lib/types";
 
@@ -118,12 +119,10 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
 
 function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <span className="flex size-8 items-center justify-center rounded-lg bg-brand font-display text-sm font-bold text-white">
-        P
-      </span>
+    <Link href="/" className="flex items-center gap-1.5">
+      <SumoMascot size={34} />
       <span className="font-display text-lg font-semibold tracking-tight text-ink">
-        PFOS
+        Sumo Finance
       </span>
     </Link>
   );
@@ -205,7 +204,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   if (settingsRows === undefined || (settings && !settings.onboardingDone)) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
-        <div className="font-display text-2xl font-semibold text-brand-ink">PFOS</div>
+        <div className="flex flex-col items-center gap-3">
+          <SumoMascot size={72} />
+          <div className="font-display text-2xl font-semibold text-brand-ink">Sumo Finance</div>
+        </div>
       </div>
     );
   }

@@ -103,7 +103,7 @@ function BootTasks({ children }: { children: ReactNode }) {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-paper">
-        <div className="font-display text-2xl font-semibold text-brand-ink">PFOS</div>
+        <div className="font-display text-2xl font-semibold text-brand-ink">Sumo Finance</div>
       </div>
     );
   }
@@ -130,7 +130,7 @@ function ServiceWorkerRegistrar() {
     });
 
     function promptUpdate(worker: ServiceWorker) {
-      showToast("È disponibile una nuova versione di PFOS", {
+      showToast("È disponibile una nuova versione di Sumo Finance", {
         duration: 20000,
         actionLabel: "Aggiorna",
         action: () => worker.postMessage({ type: "SKIP_WAITING" }),

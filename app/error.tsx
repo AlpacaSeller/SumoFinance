@@ -5,8 +5,9 @@
 // esportare subito un backup di emergenza.
 
 import { useEffect } from "react";
-import { AlertTriangle, Download, RotateCcw } from "lucide-react";
+import { Download, RotateCcw } from "lucide-react";
 import { storage } from "@/lib/storage";
+import { SumoMascot } from "@/components/Mascot";
 
 export default function GlobalError({
   error,
@@ -16,7 +17,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("PFOS error boundary:", error);
+    console.error("Sumo Finance error boundary:", error);
   }, [error]);
 
   async function emergencyBackup() {
@@ -26,7 +27,7 @@ export default function GlobalError({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `pfos-backup-emergenza-${new Date().toISOString().slice(0, 10)}.json`;
+      a.download = `sumo-backup-emergenza-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -36,9 +37,9 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <AlertTriangle className="size-10 text-warn" aria-hidden />
+      <SumoMascot size={88} className="opacity-90" />
       <h1 className="font-display text-2xl font-semibold text-ink">
-        Qualcosa è andato storto
+        Il sumo è scivolato
       </h1>
       <p className="max-w-md text-sm text-soft">
         Si è verificato un errore imprevisto in questa pagina. <strong>I tuoi dati sono al

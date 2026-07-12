@@ -17,13 +17,13 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "PFOS — Personal Financial OS",
+  title: "Sumo Finance — il tuo OS finanziario",
   description:
     "Il tuo sistema operativo finanziario personale. Local-first: tutti i dati restano sul tuo dispositivo.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "PFOS",
+    title: "Sumo Finance",
     statusBarStyle: "default",
   },
   icons: {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#12382b",
+  themeColor: "#17444a",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover", // safe area su iPhone (notch e home indicator)

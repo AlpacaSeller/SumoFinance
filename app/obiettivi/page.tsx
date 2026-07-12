@@ -88,7 +88,7 @@ export default function ObiettiviPage() {
         <EmptyState
           icon={<Target />}
           title="Nessun obiettivo"
-          text="Fondo emergenza, viaggio, anticipo casa: dai un nome ai tuoi soldi e PFOS ti dice se il ritmo basta."
+          text="Fondo emergenza, viaggio, anticipo casa: dai un nome ai tuoi soldi e Sumo Finance ti dice se il ritmo basta."
           action={<Button onClick={() => setEditing("new")}>Crea il primo obiettivo</Button>}
         />
       ) : (

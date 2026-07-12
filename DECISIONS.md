@@ -263,6 +263,15 @@
 
 ## Design
 
+- **Rebranding "Sumo Finance" (luglio 2026)**: il sumo del logo (line-art teal, moneta con
+  grafico in crescita) è la mascotte — comunica stabilità ed equilibrio. Presenza "misurata":
+  header, icone, empty state di benvenuto, onboarding, pagina errore e avatar dei Consigli
+  (predispone la futura IA-consulente con le sembianze del sumo). Palette ricalibrata sul teal
+  del logo (`#20575c`, brand scuro `#17444a`). **Gli identificatori interni restano `pfos`**
+  (database Dexie, chiavi localStorage, prefisso cache SW, `app: "PFOS"` nei backup): cambiarli
+  avrebbe rotto dati e backup esistenti. Il ₿ della moneta del logo originale è stato
+  sostituito con una freccia-grafico neutra: l'app copre tutte le finanze, non solo crypto.
+
 - **Palette "verde bosco su carta calda"** (`#12382b` su `#f6f4ef`): il verde profondo
   comunica solidità e denaro senza l'aggressività del fintech neon; la carta calda evita il
   bianco clinico e dà il tono "quaderno dei conti" premium. Semantica fissa: verde `#177347`

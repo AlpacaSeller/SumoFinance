@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { ArrowRight, Compass } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { advisor } from "@/lib/engine/advisor";
 import { allocationByClass, sumInMonth } from "@/lib/engine/aggregates";
@@ -129,8 +129,8 @@ export default function DashboardPage() {
     return (
       <EmptyState
         as="h1"
-        icon={<Compass />}
-        title="Benvenuto in PFOS"
+        mascot
+        title="Benvenuto in Sumo Finance"
         text="La tua dashboard prende vita con i primi dati: aggiungi un conto, un'entrata ricorrente e le spese principali. Bastano 5 minuti."
         action={
           <Link href="/onboarding">

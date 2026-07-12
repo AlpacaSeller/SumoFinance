@@ -25,6 +25,7 @@ import { parseItAmount, todayISO } from "@/lib/format";
 import { registerRecurringMovements, takeDailySnapshot } from "@/lib/boot";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { useToast } from "@/components/toast";
+import { SumoMascot } from "@/components/Mascot";
 
 const STEPS = [
   "Benvenuto",
@@ -207,7 +208,7 @@ export default function OnboardingPage() {
       await registerRecurringMovements();
       await takeDailySnapshot();
 
-      showToast(skipAll ? "Puoi configurare tutto con calma dalle varie pagine" : "Benvenuto in PFOS! 🎉", {
+      showToast(skipAll ? "Puoi configurare tutto con calma dalle varie pagine" : "Benvenuto in Sumo Finance! 🎉", {
         kind: "success",
       });
       router.replace("/");
@@ -222,11 +223,9 @@ export default function OnboardingPage() {
     <div className="flex min-h-screen flex-col bg-paper">
       {/* header wizard */}
       <header className="flex items-center justify-between px-5 py-4">
-        <div className="flex items-center gap-2">
-          <span className="flex size-8 items-center justify-center rounded-lg bg-brand font-display text-sm font-bold text-white">
-            P
-          </span>
-          <span className="font-display text-lg font-semibold">PFOS</span>
+        <div className="flex items-center gap-1.5">
+          <SumoMascot size={34} />
+          <span className="font-display text-lg font-semibold">Sumo Finance</span>
         </div>
         <button
           onClick={() => finish(step === 0)}
@@ -247,9 +246,13 @@ export default function OnboardingPage() {
 
         {step === 0 && (
           <StepShell title="Il tuo sistema operativo finanziario">
+            <div className="flex justify-center">
+              <SumoMascot size={110} />
+            </div>
             <p className="text-soft">
-              PFOS mette in un unico posto conti, investimenti, debiti, budget e obiettivi — e
-              trasforma i tuoi numeri in metriche e consigli chiari.
+              Sumo Finance mette in un unico posto conti, investimenti, debiti, budget e
+              obiettivi — e trasforma i tuoi numeri in metriche e consigli chiari. Solido e
+              ben piantato, come un sumo.
             </p>
             <div className="flex items-start gap-3 rounded-2xl bg-pos-soft p-4 text-sm text-pos">
               <ShieldCheck className="mt-0.5 size-5 shrink-0" />

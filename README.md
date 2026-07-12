@@ -1,10 +1,14 @@
-# PFOS — Personal Financial OS
+# Sumo Finance — il tuo OS finanziario personale
 
 Web app **local-first** di gestione finanziaria personale: patrimonio, budget, investimenti con
 prezzi live, debiti, obiettivi, simulazioni Monte Carlo/FIRE, tasse italiane semplificate,
 calendario finanziario ed economico. Interfaccia in italiano, valuta EUR, formato it-IT.
+Solida e ben piantata come un sumo: il lottatore del logo è la mascotte dell'app.
 
-**Demo in produzione:** https://pfos-psi.vercel.app
+> Nato come "PFOS — Personal Financial OS": il nome interno `pfos` sopravvive in database,
+> chiavi locali e cache per compatibilità con i dati e i backup esistenti.
+
+**Demo in produzione:** https://sumo-finance.vercel.app
 
 ![Dashboard desktop](docs/screenshot-desktop.png)
 

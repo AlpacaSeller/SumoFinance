@@ -68,16 +68,16 @@ export default function ImpostazioniPage() {
         <SyncSection settings={s} update={update} />
         <SecuritySection settings={s} update={update} showToast={showToast} />
         <BackupSection settings={s} update={update} />
-        <Card title="App sul telefono" subtitle="PFOS è una PWA installabile">
+        <Card title="App sul telefono" subtitle="Sumo Finance è una PWA installabile">
           <div className="flex items-start gap-3 text-sm text-soft">
             <Smartphone className="mt-0.5 size-5 shrink-0 text-brand-ink" />
             <div>
               <p>
-                <strong className="text-ink">iPhone/iPad:</strong> apri PFOS in Safari →
+                <strong className="text-ink">iPhone/iPad:</strong> apri Sumo Finance in Safari →
                 condividi <span className="tnum">⎋</span> → &quot;Aggiungi a Home&quot;.
               </p>
               <p className="mt-1">
-                <strong className="text-ink">Android:</strong> apri PFOS in Chrome → menu ⋮ →
+                <strong className="text-ink">Android:</strong> apri Sumo Finance in Chrome → menu ⋮ →
                 &quot;Aggiungi a schermata Home&quot; (o &quot;Installa app&quot;).
               </p>
               <p className="mt-2 text-xs text-faint">
@@ -459,7 +459,7 @@ function BackupSection({
   async function exportBackup() {
     const backup = await storage.exportAll();
     download(
-      `pfos-backup-${new Date().toISOString().slice(0, 10)}.json`,
+      `sumo-backup-${new Date().toISOString().slice(0, 10)}.json`,
       JSON.stringify(backup, null, 2)
     );
     await update({ lastBackupAt: new Date().toISOString() });
@@ -470,7 +470,7 @@ function BackupSection({
     const backup = await storage.exportAll();
     const encrypted = await encryptBackup(backup, passphrase);
     download(
-      `pfos-backup-cifrato-${new Date().toISOString().slice(0, 10)}.json`,
+      `sumo-backup-cifrato-${new Date().toISOString().slice(0, 10)}.json`,
       JSON.stringify(encrypted, null, 2)
     );
     await update({ lastBackupAt: new Date().toISOString() });
@@ -494,7 +494,7 @@ function BackupSection({
       }
       setImportPending(backup);
     } catch {
-      showToast("File non valido: serve un backup JSON esportato da PFOS", { kind: "error" });
+      showToast("File non valido: serve un backup JSON esportato dall'app", { kind: "error" });
     }
   }
 

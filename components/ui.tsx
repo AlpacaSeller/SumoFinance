@@ -5,6 +5,7 @@
 import { Info, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { fmtEUR, fmtEURSigned } from "@/lib/format";
+import { SumoMascot } from "./Mascot";
 
 // ── Card ────────────────────────────────────────────────────────────────────
 
@@ -310,6 +311,7 @@ export function EmptyState({
   text,
   action,
   as: Heading = "h2",
+  mascot = false,
 }: {
   icon?: ReactNode;
   title: string;
@@ -317,10 +319,16 @@ export function EmptyState({
   action?: ReactNode;
   /** livello del titolo: h1 quando l'empty state è l'intera pagina */
   as?: "h1" | "h2";
+  /** true: al posto dell'icona compare il sumo (per gli empty state "di benvenuto") */
+  mascot?: boolean;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-6 py-12 text-center">
-      {icon && <div className="text-faint [&>svg]:size-10">{icon}</div>}
+      {mascot ? (
+        <SumoMascot size={92} />
+      ) : (
+        icon && <div className="text-faint [&>svg]:size-10">{icon}</div>
+      )}
       <Heading className="font-display text-lg font-semibold text-ink">{title}</Heading>
       <p className="max-w-sm text-sm text-soft">{text}</p>
       {action && <div className="mt-2">{action}</div>}

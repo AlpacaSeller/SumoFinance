@@ -95,9 +95,9 @@ export function buildTaxReportHtml(input: TaxReportInput): string {
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<title>PFOS — Report fiscale ${year}</title>
+<title>Sumo Finance — Report fiscale ${year}</title>
 <style>
-  body { font-family: Georgia, "Times New Roman", serif; color: #1c2b26; margin: 40px auto; max-width: 760px; padding: 0 16px; }
+  body { font-family: Georgia, "Times New Roman", serif; color: #16282a; margin: 40px auto; max-width: 760px; padding: 0 16px; }
   h1 { font-size: 22px; margin-bottom: 2px; }
   h2 { font-size: 15px; margin: 26px 0 8px; border-bottom: 1px solid #ccc; padding-bottom: 4px; }
   .sub { color: #666; font-size: 12px; margin-bottom: 24px; }
@@ -115,7 +115,7 @@ export function buildTaxReportHtml(input: TaxReportInput): string {
 </style>
 </head>
 <body>
-  <h1>PFOS — Report fiscale ${year}</h1>
+  <h1>Sumo Finance — Report fiscale ${year}</h1>
   <div class="sub">Generato il ${fmtDate(new Date().toISOString().slice(0, 10))} · stime semplificate a supporto del commercialista, non sostituiscono la dichiarazione</div>
 
   <div class="kpis">
@@ -152,7 +152,7 @@ export function buildTaxReportHtml(input: TaxReportInput): string {
     12,5% titoli whitelist, 33% cripto-attività per realizzi dal 2026 (26% fino al 2025).
     Non considerati: IVAFE, regimi esteri, distinzione redditi
     diversi/da capitale, dividendi e cedole. Bollo stimato come 0,20% del valore attuale dei
-    prodotti finanziari (immobili esclusi). Documento generato da PFOS, app locale: i dati non
+    prodotti finanziari (immobili esclusi). Documento generato da Sumo Finance, app locale: i dati non
     hanno lasciato il dispositivo dell'utente.
   </div>
   <script>window.addEventListener("load", () => setTimeout(() => window.print(), 300));</script>

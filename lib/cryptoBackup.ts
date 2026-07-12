@@ -114,7 +114,7 @@ export async function decryptBackup(
   }
   const backup = JSON.parse(new TextDecoder().decode(plaintext)) as BackupFile;
   if (backup.app !== "PFOS" || backup.version !== 1) {
-    throw new Error("Il contenuto decifrato non è un backup PFOS valido.");
+    throw new Error("Il contenuto decifrato non è un backup valido dell'app.");
   }
   return backup;
 }

@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
-/* ── PFOS design tokens ──────────────────────────────────────────────────────
-   Palette "verde bosco su carta calda": trasmette solidità e calma, adatta a
-   un'app che custodisce finanze personali. Semantica fissa: verde = positivo,
-   rosso = negativo, cobalto = interazione. Motivazioni in DECISIONS.md. */
+/* ── Sumo Finance design tokens ──────────────────────────────────────────────
+   Palette "teal sumo su carta calda", ricalibrata sul logo: trasmette
+   stabilità ed equilibrio. Semantica fissa: verde = positivo, rosso =
+   negativo, cobalto = interazione. Motivazioni in DECISIONS.md. */
 
 :root,
 :root[data-theme="light"] {
-  --paper: #f6f4ef;
+  --paper: #f7f2e9;
   --surface: #ffffff;
-  --surface-2: #fbfaf6;
-  --ink: #1c2b26;
-  --soft: #5f6d66;
-  --faint: #66716a; /* ≥4,5:1 su paper e surface (WCAG AA) */
-  --line: #e6e2d8;
-  --line-strong: #d5d0c2;
-  --brand: #12382b;
-  --brand-2: #1d4a3a;
-  --brand-soft: #e9f0eb;
-  --brand-ink: #12382b;
+  --surface-2: #fbf8f1;
+  --ink: #16282a;
+  --soft: #566a6c;
+  --faint: #617072; /* ≥4,5:1 su paper e surface (WCAG AA) */
+  --line: #e8e1d3;
+  --line-strong: #d7cfbe;
+  --brand: #17444a;
+  --brand-2: #20575c; /* il teal del logo */
+  --brand-soft: #e4eeec;
+  --brand-ink: #17444a;
   --accent: #2b59c3;
   --accent-soft: #e8eefb;
   --pos: #177347; /* ≥4,5:1 anche su pos-soft */
@@ -27,27 +27,27 @@
   --neg-soft: #fbe9e9;
   --warn: #8a5c12; /* ≥4,5:1 su warn-soft e col bianco sopra */
   --warn-soft: #faf0dc;
-  --overlay: #1c2b26;
+  --overlay: #16282a;
   --on-fill: #ffffff; /* testo sopra i colori pieni pos/neg/warn/accent */
   color-scheme: light;
 }
 
-/* Tema scuro: stessa gerarchia, superfici verdi-carbone e testi caldi.
-   --brand resta il verde profondo (usato come sfondo pieno con testo bianco);
+/* Tema scuro: stessa gerarchia, superfici teal-carbone e testi caldi.
+   --brand resta il teal profondo (usato come sfondo pieno con testo bianco);
    --brand-ink è la variante di --brand per il TESTO, che al buio si schiarisce. */
 :root[data-theme="dark"] {
-  --paper: #101613;
-  --surface: #181f1b;
-  --surface-2: #1e2621;
-  --ink: #e7ece8;
-  --soft: #a4afa8;
-  --faint: #87938c; /* ≥4,5:1 su surface e surface-2 */
-  --line: #2a342e;
-  --line-strong: #3b463f;
-  --brand: #12382b;
-  --brand-2: #1d4a3a;
-  --brand-soft: #213529;
-  --brand-ink: #a5d2bc;
+  --paper: #0e1516;
+  --surface: #161f20;
+  --surface-2: #1c2627;
+  --ink: #e6ecec;
+  --soft: #a3b0b1;
+  --faint: #879496; /* ≥4,5:1 su surface e surface-2 */
+  --line: #283436;
+  --line-strong: #3a4749;
+  --brand: #17444a;
+  --brand-2: #20575c;
+  --brand-soft: #1e3134;
+  --brand-ink: #9ecfd4;
   --accent: #6b8fe8;
   --accent-soft: #202b41;
   --pos: #4fb583;
@@ -56,9 +56,17 @@
   --neg-soft: #362225;
   --warn: #d3a24e;
   --warn-soft: #33291b;
-  --overlay: #2f3b35;
-  --on-fill: #101613; /* al buio i colori pieni sono chiari: testo scuro */
+  --overlay: #2c3b3d;
+  --on-fill: #0e1516; /* al buio i colori pieni sono chiari: testo scuro */
   color-scheme: dark;
+}
+
+/* immagini legate al tema (mark del sumo: teal al chiaro, chiaro al buio) */
+:root[data-theme="dark"] .theme-light-only {
+  display: none;
+}
+:root:not([data-theme="dark"]) .theme-dark-only {
+  display: none;
 }
 
 @theme inline {

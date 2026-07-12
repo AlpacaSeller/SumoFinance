@@ -4,11 +4,11 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Lightbulb } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { advisor } from "@/lib/engine/advisor";
 import { Button, EmptyState, LoadingState, PageHeader } from "@/components/ui";
 import { AdviceCard } from "@/components/AdviceCard";
+import { SumoMascot } from "@/components/Mascot";
 
 export default function ConsigliPage() {
   const { ready, data, derived } = useFinancial();
@@ -28,10 +28,11 @@ export default function ConsigliPage() {
       <PageHeader
         title="Consigli"
         subtitle={`${advice.length} analis${advice.length === 1 ? "i" : "i"} sul tuo profilo ${data.settings.riskProfile} — rivalutate a ogni apertura`}
+        actions={<SumoMascot size={52} />}
       />
       {advice.length === 0 ? (
         <EmptyState
-          icon={<Lightbulb />}
+          mascot
           title={hasData ? "Nessun rilievo al momento" : "Ancora niente da analizzare"}
           text={
             hasData

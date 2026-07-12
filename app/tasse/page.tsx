@@ -84,7 +84,7 @@ export default function TassePage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `pfos-operazioni-fiscali-${year}.csv`;
+    a.download = `sumo-operazioni-fiscali-${year}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     showToast("CSV esportato (separatore ; — pronto per Excel)", { kind: "success" });

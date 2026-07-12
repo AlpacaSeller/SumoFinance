@@ -133,7 +133,7 @@ export default function UscitePage() {
               <Button
                 variant="outline"
                 onClick={() =>
-                  downloadTextFile("pfos-uscite.csv", buildMovementsCsv(data.expenses, "uscita"))
+                  downloadTextFile("sumo-uscite.csv", buildMovementsCsv(data.expenses, "uscita"))
                 }
               >
                 <FileDown className="size-4" /> Esporta CSV

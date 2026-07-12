@@ -129,7 +129,7 @@ export default function EntratePage() {
               <Button
                 variant="outline"
                 onClick={() =>
-                  downloadTextFile("pfos-entrate.csv", buildMovementsCsv(data.incomes, "entrata"))
+                  downloadTextFile("sumo-entrate.csv", buildMovementsCsv(data.incomes, "entrata"))
                 }
               >
                 <FileDown className="size-4" /> Esporta CSV
