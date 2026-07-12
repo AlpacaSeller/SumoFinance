@@ -25,7 +25,7 @@ export interface ChartTheme {
 
 const LIGHT: ChartTheme = {
   grid: "#e6e2d8",
-  axis: "#8a958e",
+  axis: "#66716a",
   soft: "#5f6d66",
   surface: "#ffffff",
   tooltip: {
@@ -37,8 +37,8 @@ const LIGHT: ChartTheme = {
     boxShadow: "0 8px 24px rgba(28,43,38,0.12)",
   },
   brandLine: "#12382b",
-  pos: "#1b7f4d",
-  neg: "#bf3f3f",
+  pos: "#177347",
+  neg: "#b03a3a",
   accent: "#2b59c3",
   classColors: {
     ETF: "#1d4a3a",
@@ -56,16 +56,16 @@ const LIGHT: ChartTheme = {
     "#c4643c",
     "#8a6fbf",
     "#c9a227",
-    "#1b7f4d",
+    "#177347",
     "#6b7f73",
-    "#bf3f3f",
+    "#b03a3a",
     "#93a29b",
   ],
 };
 
 const DARK: ChartTheme = {
   grid: "#2a342e",
-  axis: "#79857e",
+  axis: "#87938c",
   soft: "#a4afa8",
   surface: "#181f1b",
   tooltip: {

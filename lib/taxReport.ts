@@ -105,7 +105,7 @@ export function buildTaxReportHtml(input: TaxReportInput): string {
   th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid #e5e5e5; }
   th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #666; }
   .num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .pos { color: #1b7f4d; } .neg { color: #bf3f3f; }
+  .pos { color: #177347; } .neg { color: #b03a3a; }
   .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
   .kpi { border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; }
   .kpi .l { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }

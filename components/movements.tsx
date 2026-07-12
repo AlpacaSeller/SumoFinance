@@ -392,10 +392,10 @@ export function RecurringSection({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+        <h2 className="flex items-center gap-1.5 text-sm font-semibold">
           <Repeat className="size-4 text-accent" />
           {kind === "entrata" ? "Entrate ricorrenti" : "Uscite ricorrenti"}
-        </h3>
+        </h2>
         <Button variant="ghost" onClick={() => setEditing("new")}>
           + Aggiungi
         </Button>

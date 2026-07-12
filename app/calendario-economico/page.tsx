@@ -305,10 +305,10 @@ function FilterChip({
   children: React.ReactNode;
 }) {
   const activeStyles = {
-    neg: "bg-neg text-white border-neg",
-    warn: "bg-warn text-white border-warn",
+    neg: "bg-neg text-on-fill border-neg",
+    warn: "bg-warn text-on-fill border-warn",
     neutral: "bg-overlay text-white border-overlay",
-    accent: "bg-accent text-white border-accent",
+    accent: "bg-accent text-on-fill border-accent",
   };
   return (
     <button

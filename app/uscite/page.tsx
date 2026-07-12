@@ -246,7 +246,7 @@ export default function UscitePage() {
                               <IconButton
                                 label={`Modifica budget ${b.category}`}
                                 onClick={() => setOverrideFor(b.category)}
-                                className="!size-7"
+                                className="!size-9"
                               >
                                 <Pencil className="size-3.5" />
                               </IconButton>

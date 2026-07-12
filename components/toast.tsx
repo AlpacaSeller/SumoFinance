@@ -135,7 +135,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             )}
             <button
               aria-label="Chiudi notifica"
-              className="shrink-0 opacity-60 hover:opacity-100"
+              className="-my-2 -mr-2 flex size-10 shrink-0 items-center justify-center rounded-lg opacity-60 hover:opacity-100"
               onClick={() => dismiss(t.id)}
             >
               ✕

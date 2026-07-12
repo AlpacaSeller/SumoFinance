@@ -265,9 +265,13 @@
 
 - **Palette "verde bosco su carta calda"** (`#12382b` su `#f6f4ef`): il verde profondo
   comunica solidità e denaro senza l'aggressività del fintech neon; la carta calda evita il
-  bianco clinico e dà il tono "quaderno dei conti" premium. Semantica fissa: verde `#1b7f4d`
-  = positivo/entrate, rosso `#bf3f3f` = negativo/uscite/rischio, **cobalto `#2b59c3` riservato
+  bianco clinico e dà il tono "quaderno dei conti" premium. Semantica fissa: verde `#177347`
+  = positivo/entrate, rosso `#b03a3a` = negativo/uscite/rischio, **cobalto `#2b59c3` riservato
   all'interattività** (link, filtri, azioni) così non si confonde mai con i segnali finanziari.
+- **Contrasto WCAG AA verificato con axe-core** (luglio 2026) su tutte le 14 pagine, tema
+  chiaro e scuro: ogni coppia testo/sfondo dei token ≥ 4,5:1. Il token `--on-fill` gestisce il
+  testo sopra i colori pieni pos/neg/warn/accent (bianco al chiaro, scuro al buio, dove quei
+  colori si schiariscono). Se si aggiunge un colore, ricontrollare i rapporti prima di usarlo.
 - **Tipografia**: Fraunces (display serif con carattere, per titoli e hero) + Inter (testo);
   **cifre tabulari** (`font-variant-numeric: tabular-nums`) su tutti gli importi via classe
   `.tnum`.

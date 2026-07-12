@@ -30,7 +30,7 @@ export function Card({
       } p-5 ${className}`}
     >
       {(title || action) && (
-        <header className="mb-4 flex items-start justify-between gap-3">
+        <header className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div>
             {title && <h2 className="text-sm font-semibold tracking-wide">{title}</h2>}
             {subtitle && (
@@ -39,7 +39,7 @@ export function Card({
               </p>
             )}
           </div>
-          {action && <div className="shrink-0">{action}</div>}
+          {action && <div className="min-w-0">{action}</div>}
         </header>
       )}
       {children}
@@ -95,7 +95,7 @@ export function Button({
     outline:
       "border border-line-strong bg-surface text-ink hover:bg-surface-2 disabled:opacity-50",
     ghost: "text-accent hover:bg-accent-soft disabled:opacity-50",
-    danger: "bg-neg text-white hover:opacity-90 disabled:opacity-50",
+    danger: "bg-neg text-on-fill hover:opacity-90 disabled:opacity-50",
   };
   return (
     <button
@@ -309,16 +309,19 @@ export function EmptyState({
   title,
   text,
   action,
+  as: Heading = "h2",
 }: {
   icon?: ReactNode;
   title: string;
   text: string;
   action?: ReactNode;
+  /** livello del titolo: h1 quando l'empty state è l'intera pagina */
+  as?: "h1" | "h2";
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-6 py-12 text-center">
       {icon && <div className="text-faint [&>svg]:size-10">{icon}</div>}
-      <h3 className="font-display text-lg font-semibold text-ink">{title}</h3>
+      <Heading className="font-display text-lg font-semibold text-ink">{title}</Heading>
       <p className="max-w-sm text-sm text-soft">{text}</p>
       {action && <div className="mt-2">{action}</div>}
     </div>
@@ -366,7 +369,7 @@ export function Segmented<T extends string>({
           key={o.value}
           onClick={() => onChange(o.value)}
           className={`rounded-[10px] font-medium transition-colors ${
-            size === "sm" ? "px-2.5 py-1.5 text-xs" : "px-3.5 py-2 text-sm"
+            size === "sm" ? "min-h-9 px-2.5 py-1.5 text-xs" : "min-h-10 px-3.5 py-2 text-sm"
           } ${
             value === o.value
               ? "bg-surface text-ink shadow-sm"

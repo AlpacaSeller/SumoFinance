@@ -456,7 +456,7 @@ export default function OnboardingPage() {
                 <li key={c.label} className="flex items-center gap-2.5 text-sm">
                   <span
                     className={`flex size-5 items-center justify-center rounded-full ${
-                      c.done ? "bg-pos text-white" : "border border-line-strong text-faint"
+                      c.done ? "bg-pos text-on-fill" : "border border-line-strong text-faint"
                     }`}
                   >
                     {c.done && <Check className="size-3.5" />}

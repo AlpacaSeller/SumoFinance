@@ -37,7 +37,7 @@ export function AdviceCard({ advice }: { advice: Advice }) {
           <div className={`text-[11px] font-semibold uppercase tracking-wide ${styles.labelColor}`}>
             {styles.label}
           </div>
-          <h3 className="mt-0.5 font-semibold text-ink">{advice.title}</h3>
+          <h2 className="mt-0.5 font-semibold text-ink">{advice.title}</h2>
           <p className="mt-1 text-sm leading-relaxed text-soft">
             <BoldText text={advice.body} />
           </p>

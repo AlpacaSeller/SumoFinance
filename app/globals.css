@@ -12,7 +12,7 @@
   --surface-2: #fbfaf6;
   --ink: #1c2b26;
   --soft: #5f6d66;
-  --faint: #8a958e;
+  --faint: #66716a; /* ≥4,5:1 su paper e surface (WCAG AA) */
   --line: #e6e2d8;
   --line-strong: #d5d0c2;
   --brand: #12382b;
@@ -21,13 +21,14 @@
   --brand-ink: #12382b;
   --accent: #2b59c3;
   --accent-soft: #e8eefb;
-  --pos: #1b7f4d;
+  --pos: #177347; /* ≥4,5:1 anche su pos-soft */
   --pos-soft: #e3f2e9;
-  --neg: #bf3f3f;
+  --neg: #b03a3a; /* ≥4,5:1 anche su neg-soft */
   --neg-soft: #fbe9e9;
-  --warn: #a8721c;
+  --warn: #8a5c12; /* ≥4,5:1 su warn-soft e col bianco sopra */
   --warn-soft: #faf0dc;
   --overlay: #1c2b26;
+  --on-fill: #ffffff; /* testo sopra i colori pieni pos/neg/warn/accent */
   color-scheme: light;
 }
 
@@ -40,7 +41,7 @@
   --surface-2: #1e2621;
   --ink: #e7ece8;
   --soft: #a4afa8;
-  --faint: #79857e;
+  --faint: #87938c; /* ≥4,5:1 su surface e surface-2 */
   --line: #2a342e;
   --line-strong: #3b463f;
   --brand: #12382b;
@@ -56,6 +57,7 @@
   --warn: #d3a24e;
   --warn-soft: #33291b;
   --overlay: #2f3b35;
+  --on-fill: #101613; /* al buio i colori pieni sono chiari: testo scuro */
   color-scheme: dark;
 }
 
@@ -66,6 +68,7 @@
   --color-ink: var(--ink);
   --color-soft: var(--soft);
   --color-faint: var(--faint);
+  --color-on-fill: var(--on-fill);
   --color-line: var(--line);
   --color-line-strong: var(--line-strong);
   --color-brand: var(--brand);

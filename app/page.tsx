@@ -128,6 +128,7 @@ export default function DashboardPage() {
   if (!hasAnyData) {
     return (
       <EmptyState
+        as="h1"
         icon={<Compass />}
         title="Benvenuto in PFOS"
         text="La tua dashboard prende vita con i primi dati: aggiungi un conto, un'entrata ricorrente e le spese principali. Bastano 5 minuti."
@@ -155,9 +156,9 @@ export default function DashboardPage() {
       <section className="rounded-3xl bg-brand p-6 text-white md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div>
-            <div className="text-xs font-medium uppercase tracking-[0.14em] text-white/60">
+            <h1 className="text-xs font-medium uppercase tracking-[0.14em] text-white/60">
               Patrimonio netto
-            </div>
+            </h1>
             <div className="tnum font-display mt-2 text-4xl font-semibold md:text-6xl">
               {fmtEUR(d.agg.netWorth)}
             </div>

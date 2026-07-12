@@ -4,6 +4,29 @@ Web app **local-first** di gestione finanziaria personale: patrimonio, budget, i
 prezzi live, debiti, obiettivi, simulazioni Monte Carlo/FIRE, tasse italiane semplificate,
 calendario finanziario ed economico. Interfaccia in italiano, valuta EUR, formato it-IT.
 
+**Demo in produzione:** https://pfos-psi.vercel.app
+
+![Dashboard desktop](docs/screenshot-desktop.png)
+
+<img src="docs/screenshot-iphone.png" alt="Dashboard su iPhone in tema scuro" width="300">
+
+## Cosa fa
+
+- **Dashboard** con patrimonio netto, indice di salute finanziaria 0–100, cash flow,
+  asset allocation, report mensile automatico e consigli a regole
+- **Investimenti**: ricerca asset unificata (Yahoo + CoinGecko, anche per ISIN), prezzi live,
+  operazioni di acquisto/vendita/dividendo/split con PMC e fisco derivati, XIRR, benchmark
+  "e se fosse tutto su VWCE?", wallet crypto tracciati on-chain dalla chiave pubblica
+  (BTC anche via xpub/ypub/zpub, ETH/ERC-20, SOL)
+- **Budget dinamici** (media 3 mesi + override, rollover opzionale), ricorrenti automatici,
+  abbonamenti con costo-opportunità, import CSV con regole, deduplica e annulla-import
+- **Tasse italiane semplificate**: plusvalenze per anno (crypto 26% fino al 2025, 33% dal
+  2026), zainetto fiscale, tasse latenti, CSV e report stampabile per il commercialista
+- **Simulazioni Monte Carlo** con scenari what-if, obiettivo FIRE, previsione liquidità 12 mesi
+- **Obiettivi** anche agganciati al saldo reale di un conto, debiti con ammortamento francese
+- **PWA installabile** ottimizzata per iPhone (bottom bar, splash screen, offline), tema
+  chiaro/scuro, backup JSON anche cifrato (AES-256) e backup automatico su cartella
+
 ## Avvio
 
 ```bash
@@ -106,6 +129,16 @@ Twelve Data se configurato, mai blocchi dell'app).
 
 Manifest + service worker: installabile su iOS/Android ("Aggiungi a Home", istruzioni in
 Impostazioni), shell funzionante offline. Il service worker si registra in produzione.
+
+## Qualità
+
+- **80 unit test** (vitest) sui motori di calcolo puri: fisco, PMC, XIRR, ammortamento,
+  Monte Carlo, budget, CSV, backup cifrato, derivazione xpub (vettori BIP84)
+- **Suite e2e** con puppeteer contro la build di produzione: percorsi utente completi,
+  zero errori console
+- **Accessibilità**: zero violazioni axe-core (WCAG 2.1 AA) su tutte le 14 pagine, in tema
+  chiaro e scuro; contrasti dei token verificati ≥ 4,5:1
+- Le scelte architetturali e di prodotto sono documentate in `DECISIONS.md`
 
 ## Disclaimer
 
