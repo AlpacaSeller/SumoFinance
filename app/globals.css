@@ -1,26 +1,138 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ── PFOS design tokens ──────────────────────────────────────────────────────
+   Palette "verde bosco su carta calda": trasmette solidità e calma, adatta a
+   un'app che custodisce finanze personali. Semantica fissa: verde = positivo,
+   rosso = negativo, cobalto = interazione. Motivazioni in DECISIONS.md. */
+
+:root,
+:root[data-theme="light"] {
+  --paper: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #fbfaf6;
+  --ink: #1c2b26;
+  --soft: #5f6d66;
+  --faint: #8a958e;
+  --line: #e6e2d8;
+  --line-strong: #d5d0c2;
+  --brand: #12382b;
+  --brand-2: #1d4a3a;
+  --brand-soft: #e9f0eb;
+  --brand-ink: #12382b;
+  --accent: #2b59c3;
+  --accent-soft: #e8eefb;
+  --pos: #1b7f4d;
+  --pos-soft: #e3f2e9;
+  --neg: #bf3f3f;
+  --neg-soft: #fbe9e9;
+  --warn: #a8721c;
+  --warn-soft: #faf0dc;
+  --overlay: #1c2b26;
+  color-scheme: light;
+}
+
+/* Tema scuro: stessa gerarchia, superfici verdi-carbone e testi caldi.
+   --brand resta il verde profondo (usato come sfondo pieno con testo bianco);
+   --brand-ink è la variante di --brand per il TESTO, che al buio si schiarisce. */
+:root[data-theme="dark"] {
+  --paper: #101613;
+  --surface: #181f1b;
+  --surface-2: #1e2621;
+  --ink: #e7ece8;
+  --soft: #a4afa8;
+  --faint: #79857e;
+  --line: #2a342e;
+  --line-strong: #3b463f;
+  --brand: #12382b;
+  --brand-2: #1d4a3a;
+  --brand-soft: #213529;
+  --brand-ink: #a5d2bc;
+  --accent: #6b8fe8;
+  --accent-soft: #202b41;
+  --pos: #4fb583;
+  --pos-soft: #1c2f25;
+  --neg: #e08585;
+  --neg-soft: #362225;
+  --warn: #d3a24e;
+  --warn-soft: #33291b;
+  --overlay: #2f3b35;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-soft: var(--soft);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-brand: var(--brand);
+  --color-brand-2: var(--brand-2);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-ink: var(--brand-ink);
+  --color-overlay: var(--overlay);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-pos: var(--pos);
+  --color-pos-soft: var(--pos-soft);
+  --color-neg: var(--neg);
+  --color-neg-soft: var(--neg-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Cifre tabulari per tutti gli importi */
+.tnum {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-variant-numeric: lining-nums;
+}
+
+/* Focus visibile da tastiera */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Scrollbar discreta */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+/* Micro-interazioni sobrie, disattivate se l'utente lo chiede */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Numeri input senza spinner (gli importi si digitano) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
