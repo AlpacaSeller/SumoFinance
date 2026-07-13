@@ -32,7 +32,7 @@ import { useLock } from "../lock";
 import { useTheme } from "../theme";
 import { useCommandPalette } from "../CommandPalette";
 import { SumoMascot } from "../Mascot";
-import { useTable } from "@/lib/storage";
+import { storage, useTable } from "@/lib/storage";
 import type { Settings as SettingsType } from "@/lib/types";
 
 const NAV_GROUPS: {
@@ -74,7 +74,10 @@ const NAV_GROUPS: {
   },
   {
     label: "Sistema",
-    items: [{ href: "/impostazioni", label: "Impostazioni", icon: <Settings /> }],
+    items: [
+      { href: "/impostazioni", label: "Impostazioni", icon: <Settings /> },
+      { href: "/privacy", label: "Privacy e termini", icon: <ShieldCheck /> },
+    ],
   },
 ];
 
@@ -180,6 +183,26 @@ function ThemeToggle() {
   );
 }
 
+function DemoBanner() {
+  async function reset() {
+    await storage.wipeAll();
+    window.location.href = "/onboarding";
+  }
+  return (
+    <div className="flex items-center justify-center gap-3 border-t border-brand/15 bg-brand-soft px-4 py-1.5 text-xs text-brand-ink">
+      <span>
+        Stai guardando <strong>dati d&apos;esempio</strong>: niente di tutto questo è reale.
+      </span>
+      <button
+        onClick={() => void reset()}
+        className="shrink-0 rounded-lg px-2 py-1 font-semibold underline underline-offset-2 hover:opacity-80"
+      >
+        Azzera e ricomincia
+      </button>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -244,6 +267,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
           </div>
         </div>
+        {settings?.demoMode && <DemoBanner />}
       </header>
 
       {/* Drawer mobile */}

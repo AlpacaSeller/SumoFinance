@@ -23,6 +23,7 @@ import {
 import { hashPin, randomSalt, setUnlocked } from "@/lib/pin";
 import { parseItAmount, todayISO } from "@/lib/format";
 import { registerRecurringMovements, takeDailySnapshot } from "@/lib/boot";
+import { loadDemoData } from "@/lib/demo";
 import { Button, Field, Input, Select } from "@/components/ui";
 import { useToast } from "@/components/toast";
 import { SumoMascot } from "@/components/Mascot";
@@ -217,6 +218,20 @@ export default function OnboardingPage() {
     }
   }
 
+  async function loadDemo() {
+    setSaving(true);
+    try {
+      await loadDemoData();
+      showToast("Dati d'esempio caricati: esplora liberamente, azzeri quando vuoi", {
+        kind: "success",
+        duration: 8000,
+      });
+      router.replace("/");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   const progress = ((step + 1) / STEPS.length) * 100;
 
   return (
@@ -259,11 +274,23 @@ export default function OnboardingPage() {
               <p>
                 <strong>Promessa privacy:</strong> i tuoi dati restano su questo dispositivo, nel
                 browser. Nessun server, nessun account. Verso internet transitano solo i ticker
-                per aggiornare i prezzi di mercato.
+                per aggiornare i prezzi di mercato.{" "}
+                <a href="/privacy" className="font-medium underline underline-offset-2">
+                  Leggi privacy e termini
+                </a>
               </p>
             </div>
             <p className="text-sm text-faint">
-              Bastano 5 minuti per una dashboard viva. Puoi saltare qualsiasi passo.
+              Bastano 5 minuti per una dashboard viva. Puoi saltare qualsiasi passo — o{" "}
+              <button
+                type="button"
+                onClick={() => void loadDemo()}
+                disabled={saving}
+                className="font-medium text-accent underline underline-offset-2 disabled:opacity-50"
+              >
+                provare subito con dati d&apos;esempio
+              </button>
+              .
             </p>
           </StepShell>
         )}

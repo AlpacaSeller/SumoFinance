@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
+import { loadDemoData } from "@/lib/demo";
 import { advisor } from "@/lib/engine/advisor";
 import { allocationByClass, sumInMonth } from "@/lib/engine/aggregates";
 import { totalUnrealizedGain } from "@/lib/engine/tax";
@@ -133,9 +134,19 @@ export default function DashboardPage() {
         title="Benvenuto in Sumo Finance"
         text="La tua dashboard prende vita con i primi dati: aggiungi un conto, un'entrata ricorrente e le spese principali. Bastano 5 minuti."
         action={
-          <Link href="/onboarding">
-            <Button>Inizia la configurazione</Button>
-          </Link>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <Link href="/onboarding">
+              <Button>Inizia la configurazione</Button>
+            </Link>
+            <Button
+              variant="outline"
+              onClick={() => {
+                void loadDemoData().then(() => window.location.reload());
+              }}
+            >
+              Prova con dati d&apos;esempio
+            </Button>
+          </div>
         }
       />
     );

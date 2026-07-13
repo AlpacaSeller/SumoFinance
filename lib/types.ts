@@ -91,6 +91,8 @@ export interface Settings {
   budgetOverrides: Record<string, number>; // categoria → budget mensile €
   budgetRollover?: boolean; // riporta il non speso del mese scorso
   lastPriceSyncAt?: string; // ISO datetime
+  /** true se i dati caricati sono quelli d'esempio (banner con "Azzera") */
+  demoMode?: boolean;
 }
 
 export interface Account {

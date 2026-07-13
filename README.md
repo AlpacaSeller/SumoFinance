@@ -30,6 +30,9 @@ Solida e ben piantata come un sumo: il lottatore del logo è la mascotte dell'ap
 - **Obiettivi** anche agganciati al saldo reale di un conto, debiti con ammortamento francese
 - **PWA installabile** ottimizzata per iPhone (bottom bar, splash screen, offline), tema
   chiaro/scuro, backup JSON anche cifrato (AES-256) e backup automatico su cartella
+- **Modalità demo** ("Prova con dati d'esempio" nell'onboarding): 9 mesi di storia
+  finanziaria realistica per esplorare l'app senza inserire dati veri
+- **Pagina Privacy e termini** in-app: la promessa local-first spiegata per esteso
 
 ## Avvio
 
@@ -143,6 +146,11 @@ Impostazioni), shell funzionante offline. Il service worker si registra in produ
 - **Accessibilità**: zero violazioni axe-core (WCAG 2.1 AA) su tutte le 14 pagine, in tema
   chiaro e scuro; contrasti dei token verificati ≥ 4,5:1
 - Le scelte architetturali e di prodotto sono documentate in `DECISIONS.md`
+
+## Licenza
+
+Codice pubblicato a scopo di consultazione: **tutti i diritti riservati** (vedi `LICENSE`).
+Non è concesso il riuso senza autorizzazione scritta.
 
 ## Disclaimer
 
