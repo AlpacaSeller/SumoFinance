@@ -2,12 +2,13 @@
 
 // ── Abbonamenti ─────────────────────────────────────────────────────────────
 
-import { useState } from "react";
-import { Pencil, Plus, Repeat, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Pencil, Plus, Repeat, Sparkles, Trash2 } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { storage } from "@/lib/storage";
 import { uid, type Cadence, type Subscription } from "@/lib/types";
 import { futureValueMonthly } from "@/lib/engine/montecarlo";
+import { detectSubscriptionCandidates, type RecurringCandidate } from "@/lib/engine/recurring";
 import { fmtEUR, fmtEUR0, parseItAmount, todayISO } from "@/lib/format";
 import { useToast, useUndoableDelete } from "@/components/toast";
 import {
@@ -26,10 +27,67 @@ import {
   Select,
 } from "@/components/ui";
 
+const DISMISSED_KEY = "pfos-sub-suggestions-dismissed";
+
+function readDismissed(): Set<string> {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(DISMISSED_KEY) || "[]") as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
 export default function AbbonamentiPage() {
   const { ready, data } = useFinancial();
   const [editing, setEditing] = useState<Subscription | "new" | null>(null);
+  const [dismissed, setDismissed] = useState<Set<string>>(() =>
+    typeof window === "undefined" ? new Set() : readDismissed()
+  );
+  const { showToast } = useToast();
   const undoableDelete = useUndoableDelete();
+
+  const candidates = useMemo(
+    () =>
+      ready
+        ? detectSubscriptionCandidates(data.expenses, data.subscriptions, data.recurring).filter(
+            (c) => !dismissed.has(c.description.toLowerCase())
+          )
+        : [],
+    [ready, data.expenses, data.subscriptions, data.recurring, dismissed]
+  );
+
+  function dismiss(c: RecurringCandidate) {
+    const next = new Set(dismissed).add(c.description.toLowerCase());
+    setDismissed(next);
+    try {
+      localStorage.setItem(DISMISSED_KEY, JSON.stringify([...next]));
+    } catch {
+      /* niente */
+    }
+  }
+
+  async function addAsSubscription(c: RecurringCandidate) {
+    // startDate dal mese PROSSIMO: i mesi passati hanno già le spese registrate,
+    // partire da subito creerebbe doppioni
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const startDate = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-01`;
+    const sub: Subscription = {
+      id: uid(),
+      name: c.description,
+      amount: c.amount,
+      cadence: "mensile",
+      active: true,
+      chargeDay: c.day,
+      startDate,
+    };
+    await storage.put("subscriptions", sub);
+    dismiss(c);
+    showToast(
+      `"${c.description}" aggiunto: dagli addebiti dal mese prossimo ci pensa l'app`,
+      { kind: "success", duration: 6000 }
+    );
+  }
 
   if (!ready) return <LoadingState />;
 
@@ -64,6 +122,38 @@ export default function AbbonamentiPage() {
           info="Valore futuro dei versamenti mensili pari al costo degli abbonamenti, investiti al 6% annuo per 10 anni."
         />
       </div>
+
+      {candidates.length > 0 && (
+        <Card
+          title={
+            <span className="flex items-center gap-1.5">
+              <Sparkles className="size-4 text-brand-ink" aria-hidden />
+              Possibili abbonamenti rilevati
+            </span>
+          }
+          subtitle="Addebiti che si ripetono ogni mese con lo stesso importo: sembrano abbonamenti"
+          className="mb-6"
+        >
+          <ul className="flex flex-col gap-2">
+            {candidates.map((c) => (
+              <li key={c.description} className="flex flex-wrap items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <span className="text-sm font-medium text-ink">{c.description}</span>
+                  <span className="ml-2 text-xs text-faint">
+                    ~{fmtEUR(c.amount)}/mese, in {c.months} mesi, verso il giorno {c.day}
+                  </span>
+                </div>
+                <Button variant="outline" onClick={() => addAsSubscription(c)}>
+                  È un abbonamento
+                </Button>
+                <Button variant="ghost" onClick={() => dismiss(c)}>
+                  Ignora
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {data.subscriptions.length === 0 ? (
         <EmptyState

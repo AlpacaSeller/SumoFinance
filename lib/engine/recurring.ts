@@ -193,6 +193,22 @@ function median(nums: number[]): number {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
 
+/** Possibili ABBONAMENTI: addebiti mensili con stessa descrizione e importo
+ *  quasi identico (±5%), non già coperti da un abbonamento o da un ricorrente.
+ *  Considera solo movimenti manuali/import (quelli auto sono già generati). */
+export function detectSubscriptionCandidates(
+  expenses: { description: string; category: string; amount: number; date: string; sourceRef?: string; source?: string }[],
+  subscriptions: Subscription[],
+  existingRecurring: RecurringTransaction[]
+): RecurringCandidate[] {
+  const organic = expenses.filter((e) => !e.sourceRef && e.source !== "auto" && e.source !== "ricorrente");
+  const subNames = new Set(subscriptions.map((s) => normalizeDesc(s.name)));
+  return detectRecurringCandidates(organic, "uscita", existingRecurring)
+    .filter((c) => !subNames.has(normalizeDesc(c.description)))
+    .filter((c) => c.amount >= 2) // sotto i 2 € non è un abbonamento sensato
+    .slice(0, 3);
+}
+
 /** Movimenti (stessa descrizione, importo simile) presenti in ≥3 mesi distinti
  *  e non già coperti da un movimento ricorrente: candidati a diventarlo. */
 export function detectRecurringCandidates(
