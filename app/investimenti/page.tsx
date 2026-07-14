@@ -32,6 +32,7 @@ import {
   todayISO,
 } from "@/lib/format";
 import { portfolioXirr } from "@/lib/engine/xirr";
+import { computeTwr, investmentFlows } from "@/lib/engine/twr";
 import { useToast, useUndoableDelete } from "@/components/toast";
 import {
   Badge,
@@ -99,6 +100,13 @@ export default function InvestimentiPage() {
   const pl = value - invested;
   const plPct = invested > 0 ? (pl / invested) * 100 : null;
   const pXirr = portfolioXirr(data.assets, data.assetTransactions);
+  const twrFrom = new Date();
+  twrFrom.setFullYear(twrFrom.getFullYear() - 1);
+  const twr = computeTwr(
+    data.snapshots,
+    investmentFlows(data.assets, data.assetTransactions),
+    twrFrom.toISOString().slice(0, 10)
+  );
 
   const shown = data.assets
     .filter((a) => classFilter === "tutte" || a.assetClass === classFilter)
@@ -148,7 +156,7 @@ export default function InvestimentiPage() {
         }
       />
 
-      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
         <Kpi label="Valore attuale" value={fmtEUR(value)} />
         <Kpi label="Capitale investito" value={fmtEUR(invested)} />
         <Kpi
@@ -169,6 +177,29 @@ export default function InvestimentiPage() {
                 : "servono flussi datati"
           }
           info="Tasso interno di rendimento annualizzato dei tuoi flussi reali (acquisti, vendite, dividendi registrati, valore attuale): tiene conto di QUANDO hai investito. Esclude gli asset senza data di carico."
+        />
+        <Kpi
+          label="TWR"
+          value={
+            twr.computable
+              ? fmtPctSigned((twr.annualized ?? twr.cumulative ?? 0) * 100)
+              : "—"
+          }
+          tone={
+            twr.computable
+              ? (twr.annualized ?? twr.cumulative ?? 0) > 0
+                ? "pos"
+                : "neg"
+              : "default"
+          }
+          sub={
+            twr.computable
+              ? twr.annualized != null
+                ? `annualizzato su ${twr.days} giorni di snapshot`
+                : `cumulato su ${twr.days} giorni (annualizzo da 90)`
+              : "si costruisce con gli snapshot giornalieri"
+          }
+          info="Rendimento time-weighted: neutralizza l'effetto di quando hai versato o prelevato e misura solo la bontà degli investimenti. È la metrica giusta per confrontarti con un benchmark; lo XIRR invece pesa anche il tuo tempismo."
         />
         <Kpi
           label="Volatilità stimata"
