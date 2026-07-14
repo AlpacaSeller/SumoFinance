@@ -42,3 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# artefatti e2e
+/e2e/shots/
+/e2e/downloads/

@@ -8,7 +8,12 @@ import { ToastProvider, useToast, type ToastOptions } from "./toast";
 import { LockGate } from "./lock";
 import { ThemeProvider } from "./theme";
 import { CommandPaletteProvider } from "./CommandPalette";
-import { runBootTasks, backupReminderDue, pruneStalePriceHistory } from "@/lib/boot";
+import {
+  runBootTasks,
+  backupReminderDue,
+  pruneStalePriceHistory,
+  ensurePersistentStorage,
+} from "@/lib/boot";
 import { autoSyncIfDue, refreshAccountRates } from "@/lib/prices/sync";
 import { runAutoBackup } from "@/lib/autobackup";
 import { todayISO } from "@/lib/format";
@@ -38,6 +43,7 @@ async function runDailyTasks(showToast: Toast, goToBackup: () => void) {
   refreshAccountRates().catch(() => {});
   pruneStalePriceHistory().catch(() => {});
   refreshPushReminders().catch(() => {}); // promemoria push aggiornati (se attivi)
+  ensurePersistentStorage().catch(() => {}); // protegge IndexedDB dall'eviction
   runAutoBackup().then((r) => {
     if (r.status === "permission-needed") {
       showToast(

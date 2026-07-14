@@ -442,6 +442,41 @@ function PinModal({
 
 // ── Backup e dati ───────────────────────────────────────────────────────────
 
+/** Stato dello storage persistente: se attivo, il browser non cancellerà
+ *  IndexedDB per liberare spazio (richiesto automaticamente all'avvio). */
+function PersistenceBadge() {
+  const [persisted, setPersisted] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const v = navigator.storage?.persisted ? await navigator.storage.persisted() : false;
+        if (!cancelled) setPersisted(v);
+      } catch {
+        if (!cancelled) setPersisted(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  if (persisted == null) return null;
+  return (
+    <span
+      className="cursor-help"
+      title={
+        persisted
+          ? "Il browser ha promesso di non cancellare i dati per liberare spazio."
+          : "Il browser potrebbe cancellare i dati locali se il disco è pieno: esporta backup regolari. Installare la PWA di solito attiva la protezione."
+      }
+    >
+      <Badge tone={persisted ? "pos" : "warn"}>
+        {persisted ? "storage protetto" : "storage non garantito"}
+      </Badge>
+    </span>
+  );
+}
+
 function BackupSection({
   settings: s,
   update,
@@ -551,6 +586,7 @@ function BackupSection({
           <Badge tone="neutral">{data.snapshots.length} snapshot</Badge>
           <Badge tone="neutral">{movements} movimenti</Badge>
           <Badge tone="neutral">{data.assets.length} asset</Badge>
+          <PersistenceBadge />
           <span>
             {s.lastBackupAt
               ? `Ultimo backup: ${fmtDateTime(s.lastBackupAt)}`

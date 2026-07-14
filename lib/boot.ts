@@ -23,6 +23,18 @@ import { computeAggregates } from "./engine/aggregates";
 import { prunePots } from "./engine/tax";
 import { todayISO } from "./format";
 
+/** Chiede al browser lo storage "persistente": protegge IndexedDB dalla
+ *  cancellazione automatica quando il disco è sotto pressione. Idempotente. */
+export async function ensurePersistentStorage(): Promise<boolean> {
+  try {
+    if (typeof navigator === "undefined" || !navigator.storage?.persist) return false;
+    if (await navigator.storage.persisted()) return true;
+    return await navigator.storage.persist();
+  } catch {
+    return false;
+  }
+}
+
 export async function ensureDefaults(): Promise<Settings> {
   let settings = await storage.get<Settings>("settings", "main");
   if (!settings) {
