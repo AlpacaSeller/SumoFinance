@@ -142,6 +142,11 @@ export interface Asset {
    *  notifica mattutina quando il prezzo supera/scende sotto la soglia. */
   alertAbove?: number;
   alertBelow?: number;
+  /** Obbligazioni/BTP (prezzi per 100 di nominale, quantity = lotti da 100):
+   *  cedole automatiche nel calendario e rendimento a scadenza. */
+  maturityDate?: string; // data di rimborso
+  couponRate?: number; // cedola % annua LORDA sul nominale
+  couponFrequency?: "annuale" | "semestrale";
 }
 
 export type WalletChain = "bitcoin" | "ethereum" | "solana";

@@ -527,6 +527,13 @@ function AssetModal({
   const [alertBelow, setAlertBelow] = useState(
     base?.alertBelow != null ? String(base.alertBelow).replace(".", ",") : ""
   );
+  const [maturityDate, setMaturityDate] = useState(base?.maturityDate ?? "");
+  const [couponRate, setCouponRate] = useState(
+    base?.couponRate != null ? String(base.couponRate).replace(".", ",") : ""
+  );
+  const [couponFrequency, setCouponFrequency] = useState<"annuale" | "semestrale">(
+    base?.couponFrequency ?? "semestrale"
+  );
   const [saving, setSaving] = useState(false);
 
   // aliquota effettiva calcolata dalla classe (crypto 33% dal 2026, whitelist 12,5%…)
@@ -594,6 +601,9 @@ function AssetModal({
       ter: parseItAmount(ter) ?? undefined,
       alertAbove: priceSource !== "manuale" ? (parseItAmount(alertAbove) ?? undefined) : undefined,
       alertBelow: priceSource !== "manuale" ? (parseItAmount(alertBelow) ?? undefined) : undefined,
+      maturityDate: assetClass === "Obbligazioni" ? maturityDate || undefined : undefined,
+      couponRate: assetClass === "Obbligazioni" ? (parseItAmount(couponRate) ?? undefined) : undefined,
+      couponFrequency: assetClass === "Obbligazioni" && maturityDate ? couponFrequency : undefined,
     };
     setSaving(true);
     await storage.put("assets", asset);
@@ -793,6 +803,42 @@ function AssetModal({
               placeholder="es. 0,22"
             />
           </Field>
+        )}
+
+        {assetClass === "Obbligazioni" && (
+          <>
+            <Field
+              label="Scadenza (facoltativa)"
+              hint="Con scadenza e cedola, cedole e rimborso entrano nel calendario e nelle notifiche"
+            >
+              <Input
+                type="date"
+                value={maturityDate}
+                onChange={(e) => setMaturityDate(e.target.value)}
+              />
+            </Field>
+            <Field label="Cedola % annua lorda" hint="Es. BTP 3,85%: scrivi 3,85">
+              <Input
+                inputMode="decimal"
+                value={couponRate}
+                onChange={(e) => setCouponRate(e.target.value)}
+                placeholder="es. 3,85"
+              />
+            </Field>
+            <Field label="Frequenza cedola">
+              <Select
+                value={couponFrequency}
+                onChange={(e) => setCouponFrequency(e.target.value as "annuale" | "semestrale")}
+              >
+                <option value="semestrale">Semestrale (BTP)</option>
+                <option value="annuale">Annuale</option>
+              </Select>
+            </Field>
+            <p className="text-xs text-faint sm:col-span-2">
+              Convenzione: prezzi per 100 di nominale e quantità in lotti da 100 — es. 10.000 €
+              nominali a 98,5 → quantità <strong>100</strong>, PMC <strong>98,5</strong>.
+            </p>
+          </>
         )}
 
         {priceSource !== "manuale" && (

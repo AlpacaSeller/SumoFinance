@@ -3,7 +3,8 @@
 // ── Impostazioni ────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, FolderSync, KeyRound, Link2, Lock, Smartphone, Upload } from "lucide-react";
+import { Download, FolderSync, KeyRound, Link2, Lock, ScanFace, Smartphone, Upload } from "lucide-react";
+import { bioEnrolled, bioSupported, disableBiometric, enrollBiometric } from "@/lib/bio";
 import { useFinancial } from "@/lib/useFinancial";
 import { storage } from "@/lib/storage";
 import {
@@ -92,9 +93,18 @@ export default function ImpostazioniPage() {
                 <strong className="text-ink">Android:</strong> apri Sumo Finance in Chrome → menu ⋮ →
                 &quot;Aggiungi a schermata Home&quot; (o &quot;Installa app&quot;).
               </p>
+              <p className="mt-1">
+                <strong className="text-ink">Spesa con Siri:</strong> crea un Comando rapido
+                che apre l&apos;URL{" "}
+                <code className="rounded bg-surface-2 px-1 text-[11px]">
+                  {"https://sumo-finance.vercel.app/uscite?new=1&desc=[Testo]&importo=[Importo]"}
+                </code>{" "}
+                con &quot;Chiedi ogni volta&quot; sui due campi: detti descrizione e importo, si
+                apre il modale precompilato e salvi con un tap.
+              </p>
               <p className="mt-2 text-xs text-faint">
                 Attenzione: i dati vivono nel browser di ciascun dispositivo. Per portarli sul
-                telefono usa Esporta/Importa backup qui sotto.
+                telefono usa il Sync tra dispositivi o Esporta/Importa backup.
               </p>
             </div>
           </div>
@@ -311,6 +321,35 @@ function SecuritySection({
 }) {
   const [modal, setModal] = useState<"attiva" | "cambia" | "disattiva" | null>(null);
   const pinActive = Boolean(s.pinHash);
+  const [bioAvail, setBioAvail] = useState(false);
+  const [bioOn, setBioOn] = useState(() => typeof window !== "undefined" && bioEnrolled());
+  useEffect(() => {
+    let cancelled = false;
+    void bioSupported().then((v) => {
+      if (!cancelled) setBioAvail(v);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function toggleBio() {
+    if (bioOn) {
+      disableBiometric();
+      setBioOn(false);
+      showToast("Sblocco biometrico disattivato su questo dispositivo", { kind: "info" });
+      return;
+    }
+    try {
+      await enrollBiometric();
+      setBioOn(true);
+      showToast("Fatto: alla prossima apertura sblocchi con Face ID/impronta", {
+        kind: "success",
+      });
+    } catch {
+      showToast("Registrazione biometrica annullata o non riuscita", { kind: "error" });
+    }
+  }
 
   return (
     <Card
@@ -336,6 +375,19 @@ function SecuritySection({
           </>
         )}
       </div>
+      {pinActive && bioAvail && (
+        <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <Badge tone={bioOn ? "pos" : "neutral"}>
+            <ScanFace className="size-3" /> biometria {bioOn ? "attiva" : "non attiva"}
+          </Badge>
+          <Button variant="outline" onClick={() => void toggleBio()}>
+            {bioOn ? "Disattiva Face ID/impronta" : "Sblocca con Face ID/impronta"}
+          </Button>
+          <span className="text-xs text-faint">
+            Vale solo per questo dispositivo; il PIN resta come alternativa.
+          </span>
+        </div>
+      )}
       {modal && (
         <PinModal
           mode={modal}

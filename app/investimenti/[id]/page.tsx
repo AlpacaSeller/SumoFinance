@@ -11,7 +11,8 @@ import { latentTax, taxRate, unrealizedGain } from "@/lib/engine/tax";
 import { assetXirr } from "@/lib/engine/xirr";
 import { ensureAssetHistory } from "@/lib/prices/history";
 import type { PricePoint } from "@/lib/engine/benchmark";
-import { fmtEUR, fmtEURSigned, fmtNum, fmtPct, fmtPctSigned } from "@/lib/format";
+import { fmtDate, fmtEUR, fmtEURSigned, fmtNum, fmtPct, fmtPctSigned, todayISO } from "@/lib/format";
+import { approxYtm, bondEvents } from "@/lib/engine/bonds";
 import { Badge, Card, Kpi, LoadingState, PageHeader } from "@/components/ui";
 import { PriceHistoryChart } from "@/components/lazyCharts";
 import { AssetTransactionsCard } from "@/components/AssetTransactions";
@@ -69,6 +70,10 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
   const irr = assetXirr(asset, data.assetTransactions);
   const target = data.settings.targetAllocation;
   const alloc = allocationByClass(data.assets);
+  const bondYtm = approxYtm(asset, todayISO());
+  const horizon = new Date();
+  horizon.setFullYear(horizon.getFullYear() + 40);
+  const nextCoupon = bondEvents(asset, todayISO(), horizon.toISOString().slice(0, 10))[0];
 
   return (
     <div>
@@ -97,6 +102,16 @@ export default function AssetDetailPage({ params }: { params: Promise<{ id: stri
             )}
             {distributionPolicy(asset.name) && (
               <Badge tone="neutral">{distributionPolicy(asset.name)}</Badge>
+            )}
+            {bondYtm != null && (
+              <Badge tone="pos">rendimento a scadenza ≈ {fmtPct(bondYtm * 100)} lordo</Badge>
+            )}
+            {nextCoupon && (
+              <Badge tone="neutral">
+                {nextCoupon.isMaturity ? "rimborso" : "prossima cedola"} {fmtDate(nextCoupon.date)}
+                {" · "}
+                {fmtEUR(nextCoupon.amount)} lordi
+              </Badge>
             )}
           </span>
         }

@@ -2,9 +2,10 @@
 // Le voci "auto" (rate dei debiti, cedole/dividendi ricorrenti) sono derivate
 // al volo dai dati, non persistite: niente duplicati, sempre coerenti.
 
-import type { CalendarItem, Debt, RecurringTransaction } from "../types";
+import type { Asset, CalendarItem, Debt, RecurringTransaction } from "../types";
 import { PASSIVE_INCOME_CATEGORIES } from "../types";
 import { daysInMonth, parseISODate, toISODate, todayISO } from "../format";
+import { bondEvents } from "./bonds";
 
 export interface UpcomingItem {
   id: string;
@@ -22,7 +23,8 @@ export function upcomingItems(
   debts: Debt[],
   recurring: RecurringTransaction[],
   horizonDays = 90,
-  today: string = todayISO()
+  today: string = todayISO(),
+  assets: Asset[] = []
 ): UpcomingItem[] {
   const end = parseISODate(today);
   end.setDate(end.getDate() + horizonDays);
@@ -76,6 +78,20 @@ export function upcomingItems(
         date,
         origin: "auto",
         recurrence: r.cadence,
+      });
+    }
+  }
+
+  // cedole e rimborsi delle obbligazioni con piano configurato
+  for (const a of assets) {
+    for (const ev of bondEvents(a, today, endISO)) {
+      out.push({
+        id: `bond:${a.id}:${ev.date}`,
+        title: ev.isMaturity ? `Rimborso ${a.name} (+ ultima cedola)` : `Cedola ${a.name} (lorda)`,
+        amount: ev.amount,
+        date: ev.date,
+        origin: "auto",
+        recurrence: a.couponFrequency ?? "semestrale",
       });
     }
   }

@@ -63,10 +63,25 @@ const CsvImportWizard = dynamic(
   { ssr: false }
 );
 
+/** Deep-link per Siri/Comandi rapidi: /uscite?new=1&desc=caffè&importo=1,20&cat=Cibo */
+function draftFromUrl(): Partial<Movement> | undefined {
+  if (typeof window === "undefined") return undefined;
+  const p = new URLSearchParams(window.location.search);
+  if (p.get("new") !== "1") return undefined;
+  const amount = parseItAmount(p.get("importo") ?? "");
+  return {
+    description: p.get("desc")?.slice(0, 80) ?? undefined,
+    amount: amount != null && amount > 0 ? amount : undefined,
+    category: p.get("cat") ?? undefined,
+  };
+}
+
 export default function UscitePage() {
   const { ready, data, derived } = useFinancial();
-  const [editing, setEditing] = useState<Movement | "new" | null>(null);
-  const [draft, setDraft] = useState<Partial<Movement> | undefined>(undefined);
+  const [editing, setEditing] = useState<Movement | "new" | null>(() =>
+    draftFromUrl() ? "new" : null
+  );
+  const [draft, setDraft] = useState<Partial<Movement> | undefined>(() => draftFromUrl());
   const [reading, setReading] = useState(false);
   const receiptInput = useRef<HTMLInputElement>(null);
   const [importOpen, setImportOpen] = useState(false);

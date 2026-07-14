@@ -32,8 +32,9 @@ export default function CalendarioPage() {
   const undoableDelete = useUndoableDelete();
 
   const items = useMemo(
-    () => upcomingItems(data.calendarItems, data.debts, data.recurring, 90),
-    [data.calendarItems, data.debts, data.recurring]
+    () =>
+      upcomingItems(data.calendarItems, data.debts, data.recurring, 90, undefined, data.assets),
+    [data.calendarItems, data.debts, data.recurring, data.assets]
   );
 
   const byDate = useMemo(() => {

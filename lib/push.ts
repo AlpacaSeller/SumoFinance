@@ -49,16 +49,19 @@ function vapidKeyBytes(): Uint8Array {
 }
 
 async function buildReminders(): Promise<{ date: string; title: string; amount?: number }[]> {
-  const [calendarItems, debts, recurring] = await Promise.all([
+  const [calendarItems, debts, recurring, assets] = await Promise.all([
     storage.list<CalendarItem>("calendarItems"),
     storage.list<Debt>("debts"),
     storage.list<RecurringTransaction>("recurringTransactions"),
+    storage.list<Asset>("assets"),
   ]);
-  return upcomingItems(calendarItems, debts, recurring, HORIZON_DAYS, todayISO()).map((x) => ({
-    date: x.date,
-    title: x.title,
-    amount: Math.round(x.amount),
-  }));
+  return upcomingItems(calendarItems, debts, recurring, HORIZON_DAYS, todayISO(), assets).map(
+    (x) => ({
+      date: x.date,
+      title: x.title,
+      amount: Math.round(x.amount),
+    })
+  );
 }
 
 /** Soglie di prezzo per il controllo mattutino del server: solo nome asset,

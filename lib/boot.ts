@@ -33,14 +33,15 @@ export async function updateAppBadge(): Promise<void> {
       clearAppBadge?: () => Promise<void>;
     };
     if (typeof nav.setAppBadge !== "function") return;
-    const [calendarItems, debts, recurring] = await Promise.all([
+    const [calendarItems, debts, recurring, assets] = await Promise.all([
       storage.list<CalendarItem>("calendarItems"),
       storage.list<Debt>("debts"),
       storage.list<RecurringTransaction>("recurringTransactions"),
+      storage.list<Asset>("assets"),
     ]);
     const today = todayISO();
     const { upcomingItems } = await import("./engine/calendar");
-    const count = upcomingItems(calendarItems, debts, recurring, 1, today).filter(
+    const count = upcomingItems(calendarItems, debts, recurring, 1, today, assets).filter(
       (x) => x.date === today
     ).length;
     if (count > 0) await nav.setAppBadge(count);

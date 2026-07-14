@@ -9,15 +9,18 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
+  useRef,
   useState,
   useSyncExternalStore,
   type ReactNode,
 } from "react";
-import { Lock } from "lucide-react";
+import { Lock, ScanFace } from "lucide-react";
 import { useTable } from "@/lib/storage";
 import type { Settings } from "@/lib/types";
 import { isUnlocked, setUnlocked, subscribeUnlock, verifyPin } from "@/lib/pin";
+import { bioEnrolled, verifyBiometric } from "@/lib/bio";
 
 interface LockContextValue {
   pinEnabled: boolean;
@@ -77,6 +80,19 @@ function LockScreen({
 }) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState(false);
+  const [bioAvailable] = useState(() => bioEnrolled());
+  const bioTriedRef = useRef(false);
+
+  const tryBiometric = useCallback(async () => {
+    if (await verifyBiometric()) onUnlock();
+  }, [onUnlock]);
+
+  // tentativo automatico all'apertura del lucchetto (un solo prompt)
+  useEffect(() => {
+    if (!bioAvailable || bioTriedRef.current) return;
+    bioTriedRef.current = true;
+    void tryBiometric();
+  }, [bioAvailable, tryBiometric]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -126,6 +142,15 @@ function LockScreen({
         >
           Entra
         </button>
+        {bioAvailable && (
+          <button
+            type="button"
+            onClick={() => void tryBiometric()}
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/30 font-semibold text-white transition-colors hover:bg-white/10"
+          >
+            <ScanFace className="size-5" /> Sblocca con Face ID
+          </button>
+        )}
         <p className="text-center text-xs text-white/60">
           Il PIN protegge da occhi indiscreti su questo dispositivo.
         </p>
