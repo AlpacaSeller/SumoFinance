@@ -3,9 +3,10 @@
 // ── Card "Il tuo mese" in dashboard ─────────────────────────────────────────
 
 import { useMemo, useState } from "react";
-import { CalendarCheck, ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarCheck, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import type { FinancialData } from "@/lib/types";
 import { buildMonthlyReport } from "@/lib/engine/monthlyReport";
+import { buildAnnualReportHtml } from "@/lib/annualReport";
 import {
   fmtEUR0,
   fmtEURSigned,
@@ -25,8 +26,24 @@ export function MonthlyReportCard({ data }: { data: FinancialData }) {
   const lastMonthReport = useMemo(() => buildMonthlyReport(data), [data]);
   if (!lastMonthReport && offset === -1 && !report) return null;
 
+  const reportYear = Number(key.slice(0, 4));
+
+  function openAnnualReport() {
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(buildAnnualReportHtml(data, reportYear));
+    w.document.close();
+  }
+
   const nav = (
     <div className="flex items-center gap-1">
+      <button
+        onClick={openAnnualReport}
+        title={`Apri il report annuale ${reportYear} (stampabile)`}
+        className="mr-1 flex min-h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-soft hover:bg-surface-2 hover:text-ink"
+      >
+        <FileText className="size-3.5" /> Report {reportYear}
+      </button>
       <IconButton
         label="Mese precedente"
         onClick={() => setOffset((o) => Math.max(-24, o - 1))}
