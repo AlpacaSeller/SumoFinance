@@ -50,9 +50,20 @@ export default function PrivacyPage() {
                 dati personali.
               </p>
               <p>
-                Le due API interne dell&apos;app (<code className="text-xs">/api/quote</code>,{" "}
+                Le API interne dell&apos;app (<code className="text-xs">/api/quote</code>,{" "}
                 <code className="text-xs">/api/economic-calendar</code>) sono proxy di sola
-                lettura senza stato: non registrano né conservano nulla.
+                lettura: non registrano né conservano nulla di personale. I dati di mercato
+                vengono messi in una cache condivisa (solo ticker e prezzi pubblici) per non
+                sovraccaricare le fonti gratuite.
+              </p>
+              <p>
+                <strong className="text-ink">Sync tra dispositivi (opzionale)</strong>: se lo
+                attivi, un backup <strong className="text-ink">cifrato end-to-end</strong> con
+                la tua passphrase (AES-256) viene depositato su un server europeo per farlo
+                scaricare ai tuoi altri dispositivi. Il server vede solo un blob illeggibile:
+                senza la passphrase — che non lascia mai i tuoi dispositivi — non è
+                decifrabile da nessuno, gestore incluso. Puoi eliminare la copia cloud in
+                qualsiasi momento da Impostazioni → Sync.
               </p>
             </div>
           </div>

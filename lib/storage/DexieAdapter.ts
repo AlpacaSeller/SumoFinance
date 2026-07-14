@@ -1,6 +1,10 @@
 import { db, TABLE_NAMES, type TableName } from "../db";
 import type { BackupFile } from "../types";
 import type { StorageAdapter } from "./StorageAdapter";
+import { markSyncDirty } from "../syncDirty";
+
+/** Cache locali: non sono "dati dell'utente", non fanno scattare il sync. */
+const CACHE_TABLES = new Set<TableName>(["priceHistoryCache", "economicEventsCache"]);
 
 export class DexieAdapter implements StorageAdapter {
   async list<T>(table: TableName): Promise<T[]> {
@@ -13,14 +17,17 @@ export class DexieAdapter implements StorageAdapter {
 
   async put<T extends { id: string }>(table: TableName, item: T): Promise<void> {
     await db.table(table).put(item);
+    if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 
   async bulkPut<T extends { id: string }>(table: TableName, items: T[]): Promise<void> {
     await db.table(table).bulkPut(items);
+    if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 
   async remove(table: TableName, id: string): Promise<void> {
     await db.table(table).delete(id);
+    if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 
   async findBy<T>(table: TableName, field: string, value: unknown): Promise<T | undefined> {
@@ -55,6 +62,7 @@ export class DexieAdapter implements StorageAdapter {
         }
       }
     });
+    markSyncDirty();
   }
 
   async wipeAll(): Promise<void> {

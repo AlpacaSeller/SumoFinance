@@ -93,6 +93,8 @@ export interface Settings {
   lastPriceSyncAt?: string; // ISO datetime
   /** true se i dati caricati sono quelli d'esempio (banner con "Azzera") */
   demoMode?: boolean;
+  /** Codice del gruppo di sync E2E (la passphrase resta in localStorage). */
+  syncId?: string;
 }
 
 export interface Account {

@@ -12,6 +12,8 @@ import { runBootTasks, backupReminderDue, pruneStalePriceHistory } from "@/lib/b
 import { autoSyncIfDue, refreshAccountRates } from "@/lib/prices/sync";
 import { runAutoBackup } from "@/lib/autobackup";
 import { todayISO } from "@/lib/format";
+import { pushSync, syncOnOpen } from "@/lib/sync";
+import { syncDirtyAt } from "@/lib/syncDirty";
 
 let lastBootDate = ""; // giorno dell'ultima esecuzione delle attività di avvio
 
@@ -78,6 +80,12 @@ function BootTasks({ children }: { children: ReactNode }) {
     startedRef.current = true;
     (async () => {
       try {
+        // 1) sync E2E: porta dentro le modifiche dell'altro dispositivo PRIMA
+        //    delle attività giornaliere (che lavorano sul dataset aggiornato)
+        const sync = await syncOnOpen();
+        if (sync === "importato") {
+          showToast("Dati sincronizzati dall'altro dispositivo", { kind: "success" });
+        }
         if (lastBootDate !== todayISO()) {
           await runDailyTasks(showToast, () => router.push("/impostazioni#backup"));
         }
@@ -87,11 +95,40 @@ function BootTasks({ children }: { children: ReactNode }) {
     })();
   }, [showToast, router]);
 
+  // push periodico: se ci sono modifiche locali "ferme" da più di 15 s le
+  // spinge al deposito cifrato (no-op se il sync non è attivo)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      const dirty = syncDirtyAt();
+      if (dirty > 0 && Date.now() - dirty > 15000) {
+        pushSync().catch(() => {});
+      }
+    }, 30000);
+    function onHide() {
+      if (document.visibilityState === "hidden" && syncDirtyAt() > 0) {
+        pushSync().catch(() => {});
+      }
+    }
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener("visibilitychange", onHide);
+    };
+  }, []);
+
   // La PWA su iPhone resta viva per giorni senza ricaricarsi: quando torna
   // visibile in un giorno nuovo, riesegui le attività giornaliere.
   useEffect(() => {
     function onVisible() {
       if (document.visibilityState !== "visible") return;
+      // torni sull'app: controlla se l'altro dispositivo ha spinto qualcosa
+      syncOnOpen()
+        .then((r) => {
+          if (r === "importato") {
+            showToast("Dati sincronizzati dall'altro dispositivo", { kind: "success" });
+          }
+        })
+        .catch(() => {});
       if (lastBootDate && lastBootDate !== todayISO()) {
         runDailyTasks(showToast, () => router.push("/impostazioni#backup")).catch(() => {});
       }

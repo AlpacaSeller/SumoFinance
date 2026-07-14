@@ -3,7 +3,7 @@
 // ── Impostazioni ────────────────────────────────────────────────────────────
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Download, FolderSync, KeyRound, Lock, Smartphone, Upload } from "lucide-react";
+import { Download, FolderSync, KeyRound, Link2, Lock, Smartphone, Upload } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { storage } from "@/lib/storage";
 import {
@@ -21,6 +21,14 @@ import {
 } from "@/lib/cryptoBackup";
 import { ASSET_CLASSES, type AssetClass, type BackupFile, type RiskProfile, type Settings } from "@/lib/types";
 import { hashPin, randomSalt, setUnlocked, verifyPin } from "@/lib/pin";
+import {
+  connectSync,
+  createSync,
+  disconnectSync,
+  formatSyncCode,
+  lastSyncAt,
+  pushSync,
+} from "@/lib/sync";
 import { fmtDateTime, fmtNum, parseItAmount } from "@/lib/format";
 import { useToast } from "@/components/toast";
 import { useTheme, type ThemePreference } from "@/components/theme";
@@ -68,6 +76,7 @@ export default function ImpostazioniPage() {
         <SyncSection settings={s} update={update} />
         <SecuritySection settings={s} update={update} showToast={showToast} />
         <BackupSection settings={s} update={update} />
+        <DeviceSyncSection settings={s} />
         <Card title="App sul telefono" subtitle="Sumo Finance è una PWA installabile">
           <div className="flex items-start gap-3 text-sm text-soft">
             <Smartphone className="mt-0.5 size-5 shrink-0 text-brand-ink" />
@@ -848,5 +857,222 @@ function AutoBackupBlock({ lastAutoBackupAt }: { lastAutoBackupAt?: string }) {
         </>
       )}
     </div>
+  );
+}
+
+// ── Sync E2E tra dispositivi ────────────────────────────────────────────────
+
+function DeviceSyncSection({ settings }: { settings: Settings }) {
+  const { showToast } = useToast();
+  const [hasPass, setHasPass] = useState(
+    () => typeof window !== "undefined" && Boolean(localStorage.getItem("pfos-sync-pass"))
+  );
+  const [mode, setMode] = useState<"idle" | "create" | "connect">("idle");
+  const [pass, setPass] = useState("");
+  const [pass2, setPass2] = useState("");
+  const [codeInput, setCodeInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [lastAt, setLastAt] = useState<string | null>(() =>
+    typeof window !== "undefined" ? lastSyncAt() : null
+  );
+
+  const enabled = Boolean(settings.syncId) && hasPass;
+
+  async function doCreate() {
+    if (pass.length < 8) {
+      showToast("La passphrase deve avere almeno 8 caratteri", { kind: "error" });
+      return;
+    }
+    if (pass !== pass2) {
+      showToast("Le due passphrase non coincidono", { kind: "error" });
+      return;
+    }
+    setBusy(true);
+    try {
+      await createSync(pass);
+      setHasPass(true);
+      setLastAt(lastSyncAt());
+      setMode("idle");
+      setPass("");
+      setPass2("");
+      showToast("Sync attivato: inserisci codice e passphrase sull'altro dispositivo", {
+        kind: "success",
+        duration: 8000,
+      });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Attivazione non riuscita", { kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doConnect() {
+    setBusy(true);
+    try {
+      await connectSync(codeInput, pass);
+      setHasPass(true);
+      setLastAt(lastSyncAt());
+      setMode("idle");
+      setPass("");
+      setCodeInput("");
+      showToast("Dispositivo collegato: dati importati dal cloud", { kind: "success" });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Collegamento non riuscito", { kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doPushNow() {
+    setBusy(true);
+    try {
+      await pushSync();
+      setLastAt(lastSyncAt());
+      showToast("Sincronizzato", { kind: "success" });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Sync non riuscito", { kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function doDisconnect(deleteRemote: boolean) {
+    setBusy(true);
+    try {
+      await disconnectSync(deleteRemote);
+      setHasPass(false);
+      setLastAt(null);
+      showToast(
+        deleteRemote
+          ? "Sync scollegato e copia cloud eliminata"
+          : "Sync scollegato da questo dispositivo (la copia cloud resta per gli altri)",
+        { kind: "info" }
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card
+      title="Sync tra dispositivi"
+      subtitle="Cifratura end-to-end: sul cloud viaggia solo un blob illeggibile, la passphrase non lascia mai i tuoi dispositivi"
+    >
+      <div className="flex flex-col gap-3 text-sm">
+        {enabled ? (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link2 className="size-4 text-brand-ink" aria-hidden />
+              <span className="font-semibold">Attivo</span>
+              <Badge tone="pos">codice {formatSyncCode(settings.syncId ?? "")}</Badge>
+              {lastAt && (
+                <span className="text-xs text-faint">
+                  ultimo sync: <span className="tnum">{fmtDateTime(lastAt)}</span>
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-soft">
+              Sull&apos;altro dispositivo: Impostazioni → Sync → <em>Collega dispositivo</em>,
+              poi inserisci il codice qui sopra e la stessa passphrase. La sincronizzazione
+              avviene a ogni apertura e dopo le modifiche; vince la modifica più recente.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={doPushNow} disabled={busy}>
+                Sincronizza ora
+              </Button>
+              <Button variant="ghost" onClick={() => doDisconnect(false)} disabled={busy}>
+                Scollega dispositivo
+              </Button>
+              <Button variant="ghost" onClick={() => doDisconnect(true)} disabled={busy}>
+                Scollega ed elimina dal cloud
+              </Button>
+            </div>
+          </>
+        ) : mode === "create" ? (
+          <>
+            <p className="text-xs text-soft">
+              Scegli una passphrase (minimo 8 caratteri): cifra i tuoi dati prima che lascino
+              il dispositivo. <strong>Se la perdi, il contenuto del cloud è irrecuperabile.</strong>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Passphrase">
+                <Input
+                  type="password"
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+              <Field label="Ripeti passphrase">
+                <Input
+                  type="password"
+                  value={pass2}
+                  onChange={(e) => setPass2(e.target.value)}
+                  autoComplete="new-password"
+                />
+              </Field>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={doCreate} disabled={busy}>
+                {busy ? "Attivazione…" : "Attiva il sync"}
+              </Button>
+              <Button variant="ghost" onClick={() => setMode("idle")} disabled={busy}>
+                Annulla
+              </Button>
+            </div>
+          </>
+        ) : mode === "connect" ? (
+          <>
+            <p className="text-xs text-soft">
+              Inserisci il codice mostrato sul primo dispositivo e la stessa passphrase.
+              <strong> Attenzione:</strong> i dati presenti su questo dispositivo verranno
+              sostituiti da quelli del cloud.
+            </p>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Codice sync">
+                <Input
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value)}
+                  placeholder="es. abcde-fghjk-mnpqr-stvwx"
+                  autoComplete="off"
+                />
+              </Field>
+              <Field label="Passphrase">
+                <Input
+                  type="password"
+                  value={pass}
+                  onChange={(e) => setPass(e.target.value)}
+                  autoComplete="off"
+                />
+              </Field>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={doConnect} disabled={busy}>
+                {busy ? "Collegamento…" : "Collega e importa"}
+              </Button>
+              <Button variant="ghost" onClick={() => setMode("idle")} disabled={busy}>
+                Annulla
+              </Button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-xs text-soft">
+              Tieni iPhone e computer allineati senza account: i dati viaggiano cifrati con
+              una passphrase che conosci solo tu. Sul primo dispositivo crea il sync; sugli
+              altri usa <em>Collega dispositivo</em>.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button variant="outline" onClick={() => setMode("create")}>
+                Crea nuovo sync
+              </Button>
+              <Button variant="outline" onClick={() => setMode("connect")}>
+                Collega dispositivo
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </Card>
   );
 }
