@@ -7,8 +7,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
+const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY?.trim();
 const ID_RE = /^[a-z2-9]{20}$/; // 20 caratteri base32-crockford minuscoli
 const MAX_BLOB = 3_500_000; // ~3,5 MB: sotto il limite body delle function
 
@@ -40,13 +40,19 @@ export async function GET(req: NextRequest) {
   if (!ID_RE.test(id)) {
     return NextResponse.json({ error: "Codice sync non valido" }, { status: 400 });
   }
-  const res = await sb(`sync_blobs?id=eq.${id}&select=blob,updated_at`);
-  if (!res.ok) return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
-  const rows = (await res.json()) as { blob: string; updated_at: string }[];
-  if (!Array.isArray(rows) || rows.length === 0) {
-    return NextResponse.json({ error: "Nessun sync con questo codice" }, { status: 404 });
+  try {
+    const res = await sb(`sync_blobs?id=eq.${id}&select=blob,updated_at`);
+    if (!res.ok) {
+      return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
+    }
+    const rows = (await res.json()) as { blob: string; updated_at: string }[];
+    if (!Array.isArray(rows) || rows.length === 0) {
+      return NextResponse.json({ error: "Nessun sync con questo codice" }, { status: 404 });
+    }
+    return NextResponse.json({ blob: rows[0].blob, updatedAt: rows[0].updated_at });
+  } catch {
+    return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
   }
-  return NextResponse.json({ blob: rows[0].blob, updatedAt: rows[0].updated_at });
 }
 
 export async function POST(req: NextRequest) {
@@ -74,13 +80,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Il blob deve essere un backup cifrato" }, { status: 400 });
   }
   const updatedAt = new Date().toISOString();
-  const res = await sb("sync_blobs?on_conflict=id", {
-    method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates" },
-    body: JSON.stringify([{ id, blob, updated_at: updatedAt }]),
-  });
-  if (!res.ok) return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
-  return NextResponse.json({ updatedAt });
+  try {
+    const res = await sb("sync_blobs?on_conflict=id", {
+      method: "POST",
+      headers: { Prefer: "resolution=merge-duplicates" },
+      body: JSON.stringify([{ id, blob, updated_at: updatedAt }]),
+    });
+    if (!res.ok) {
+      return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
+    }
+    return NextResponse.json({ updatedAt });
+  } catch {
+    return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
+  }
 }
 
 export async function DELETE(req: NextRequest) {
@@ -90,7 +102,13 @@ export async function DELETE(req: NextRequest) {
   if (!ID_RE.test(id)) {
     return NextResponse.json({ error: "Codice sync non valido" }, { status: 400 });
   }
-  const res = await sb(`sync_blobs?id=eq.${id}`, { method: "DELETE" });
-  if (!res.ok) return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
-  return NextResponse.json({ ok: true });
+  try {
+    const res = await sb(`sync_blobs?id=eq.${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
+    }
+    return NextResponse.json({ ok: true });
+  } catch {
+    return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
+  }
 }

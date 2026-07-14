@@ -8,8 +8,10 @@
 // non risponde entro 3 s, le funzioni degradano in silenzio (null / no-op) e
 // il proxy si comporta come prima. Mai bloccare una quotazione per la cache.
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY;
+// trim(): un valore incollato con spazi o CR/LF finali (capita con le CLI su
+// Windows) renderebbe l'URL invalido e ogni fetch esploderebbe
+const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
+const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY?.trim();
 
 export interface SharedCacheHit {
   payload: unknown;
