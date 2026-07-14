@@ -979,16 +979,40 @@ function DeviceSyncSection({ settings }: { settings: Settings }) {
   const [hasPass, setHasPass] = useState(
     () => typeof window !== "undefined" && Boolean(localStorage.getItem("pfos-sync-pass"))
   );
-  const [mode, setMode] = useState<"idle" | "create" | "connect">("idle");
+  // arrivo da QR: ?synccode=… precompila il collegamento (resta solo la passphrase)
+  const [scannedCode] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return new URLSearchParams(window.location.search).get("synccode") ?? "";
+  });
+  const [mode, setMode] = useState<"idle" | "create" | "connect">(() =>
+    scannedCode ? "connect" : "idle"
+  );
   const [pass, setPass] = useState("");
   const [pass2, setPass2] = useState("");
-  const [codeInput, setCodeInput] = useState("");
+  const [codeInput, setCodeInput] = useState(scannedCode);
   const [busy, setBusy] = useState(false);
   const [lastAt, setLastAt] = useState<string | null>(() =>
     typeof window !== "undefined" ? lastSyncAt() : null
   );
+  const [qr, setQr] = useState<string | null>(null);
 
   const enabled = Boolean(settings.syncId) && hasPass;
+
+  // QR con l'URL di collegamento: inquadri con l'iPhone e resta solo la passphrase
+  useEffect(() => {
+    if (!enabled || !settings.syncId) return;
+    const url = `${window.location.origin}/impostazioni?synccode=${settings.syncId}`;
+    let cancelled = false;
+    import("qrcode")
+      .then((QR) => QR.toDataURL(url, { margin: 1, width: 220 }))
+      .then((dataUrl) => {
+        if (!cancelled) setQr(dataUrl);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [enabled, settings.syncId]);
 
   async function doCreate() {
     if (pass.length < 8) {
@@ -1083,11 +1107,23 @@ function DeviceSyncSection({ settings }: { settings: Settings }) {
                 </span>
               )}
             </div>
-            <p className="text-xs text-soft">
-              Sull&apos;altro dispositivo: Impostazioni → Sync → <em>Collega dispositivo</em>,
-              poi inserisci il codice qui sopra e la stessa passphrase. La sincronizzazione
-              avviene a ogni apertura e dopo le modifiche; vince la modifica più recente.
-            </p>
+            <div className="flex flex-wrap items-start gap-4">
+              {enabled && qr && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={qr}
+                  alt={`QR code di collegamento sync ${formatSyncCode(settings.syncId ?? "")}`}
+                  className="size-36 rounded-lg border border-line bg-white p-1.5"
+                />
+              )}
+              <p className="min-w-48 flex-1 text-xs text-soft">
+                Sull&apos;altro dispositivo: <strong>inquadra il QR</strong> con la fotocamera
+                (si apre l&apos;app col codice già inserito) e digita solo la passphrase.
+                In alternativa: Impostazioni → Sync → <em>Collega dispositivo</em> e inserisci
+                codice e passphrase a mano. La sincronizzazione avviene a ogni apertura e dopo
+                le modifiche; vince la modifica più recente.
+              </p>
+            </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={doPushNow} disabled={busy}>
                 Sincronizza ora
