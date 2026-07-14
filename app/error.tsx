@@ -37,7 +37,7 @@ export default function GlobalError({
 
   return (
     <div className="flex min-h-[70vh] flex-col items-center justify-center gap-4 px-6 text-center">
-      <SumoMascot size={88} className="opacity-90" />
+      <SumoMascot pose="oops" size={110} className="opacity-90" />
       <h1 className="font-display text-2xl font-semibold text-ink">
         Il sumo è scivolato
       </h1>

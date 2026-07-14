@@ -262,7 +262,7 @@ export default function OnboardingPage() {
         {step === 0 && (
           <StepShell title="Il tuo sistema operativo finanziario">
             <div className="flex justify-center">
-              <SumoMascot size={110} />
+              <SumoMascot pose="welcome" size={120} />
             </div>
             <p className="text-soft">
               Sumo Finance mette in un unico posto conti, investimenti, debiti, budget e

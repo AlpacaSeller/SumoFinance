@@ -5,7 +5,7 @@
 import { Info, X } from "lucide-react";
 import { useEffect, useId, useRef, type ReactNode } from "react";
 import { fmtEUR, fmtEURSigned } from "@/lib/format";
-import { SumoMascot } from "./Mascot";
+import { SumoMascot, type SumoPose } from "./Mascot";
 
 // ── Card ────────────────────────────────────────────────────────────────────
 
@@ -312,6 +312,7 @@ export function EmptyState({
   action,
   as: Heading = "h2",
   mascot = false,
+  mascotPose = "default",
 }: {
   icon?: ReactNode;
   title: string;
@@ -321,11 +322,12 @@ export function EmptyState({
   as?: "h1" | "h2";
   /** true: al posto dell'icona compare il sumo (per gli empty state "di benvenuto") */
   mascot?: boolean;
+  mascotPose?: SumoPose;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-line-strong bg-surface-2 px-6 py-12 text-center">
       {mascot ? (
-        <SumoMascot size={92} />
+        <SumoMascot pose={mascotPose} size={92} />
       ) : (
         icon && <div className="text-faint [&>svg]:size-10">{icon}</div>
       )}

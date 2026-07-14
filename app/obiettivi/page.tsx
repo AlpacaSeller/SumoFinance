@@ -20,6 +20,7 @@ import {
   todayISO,
 } from "@/lib/format";
 import { useToast, useUndoableDelete } from "@/components/toast";
+import { SumoMascot } from "@/components/Mascot";
 import {
   Badge,
   Button,
@@ -97,17 +98,26 @@ export default function ObiettiviPage() {
             return (
               <Card key={g.id}>
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <h3 className="font-display text-lg font-semibold">{g.name}</h3>
-                    <p className="mt-0.5 text-xs text-faint">
-                      scadenza {fmtDate(g.deadline)} ·{" "}
-                      {monthsLeft > 0 ? `${monthsLeft} mesi rimanenti` : "scaduto"}
-                    </p>
-                    {linkedAccount && (
-                      <Badge tone="accent" className="mt-1">
-                        <Link2 className="size-3" /> segue il saldo di «{linkedAccount.name}»
-                      </Badge>
-                    )}
+                  <div className="flex items-start gap-3">
+                    {pct >= 100 && <SumoMascot pose="celebrate" size={64} />}
+                    <div>
+                      <h3 className="font-display text-lg font-semibold">{g.name}</h3>
+                      <p className="mt-0.5 text-xs text-faint">
+                        {pct >= 100 ? (
+                          <span className="font-semibold text-pos">obiettivo raggiunto! 🎉</span>
+                        ) : (
+                          <>
+                            scadenza {fmtDate(g.deadline)} ·{" "}
+                            {monthsLeft > 0 ? `${monthsLeft} mesi rimanenti` : "scaduto"}
+                          </>
+                        )}
+                      </p>
+                      {linkedAccount && (
+                        <Badge tone="accent" className="mt-1">
+                          <Link2 className="size-3" /> segue il saldo di «{linkedAccount.name}»
+                        </Badge>
+                      )}
+                    </div>
                   </div>
                   <div className="flex shrink-0 items-center">
                     {saved < g.target && !linkedAccount && (

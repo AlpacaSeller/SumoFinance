@@ -144,6 +144,7 @@ export default function ConsigliPage() {
       {advice.length === 0 ? (
         <EmptyState
           mascot
+          mascotPose={hasData ? "celebrate" : "default"}
           title={hasData ? "Nessun rilievo al momento" : "Ancora niente da analizzare"}
           text={
             hasData
