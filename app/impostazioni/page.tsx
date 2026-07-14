@@ -74,6 +74,7 @@ export default function ImpostazioniPage() {
         <ProfileSection settings={s} update={update} />
         <TargetAllocationSection settings={s} update={update} />
         <SyncSection settings={s} update={update} />
+        <AiSection settings={s} update={update} />
         <SecuritySection settings={s} update={update} showToast={showToast} />
         <BackupSection settings={s} update={update} />
         <DeviceSyncSection settings={s} />
@@ -857,6 +858,117 @@ function AutoBackupBlock({ lastAutoBackupAt }: { lastAutoBackupAt?: string }) {
         </>
       )}
     </div>
+  );
+}
+
+// ── Consigli AI (BYOK) ──────────────────────────────────────────────────────
+
+function AiSection({
+  settings,
+  update,
+}: {
+  settings: Settings;
+  update: (patch: Partial<Settings>) => Promise<void>;
+}) {
+  const { showToast } = useToast();
+  const [provider, setProvider] = useState<"gemini" | "anthropic">(
+    settings.aiProvider ?? "gemini"
+  );
+  const [key, setKey] = useState(settings.aiApiKey ?? "");
+
+  const configured = Boolean(settings.aiProvider && settings.aiApiKey);
+
+  async function save() {
+    const k = key.trim();
+    if (!k) {
+      await update({ aiProvider: undefined, aiApiKey: undefined });
+      showToast("Consigli AI disattivati", { kind: "info" });
+      return;
+    }
+    await update({ aiProvider: provider, aiApiKey: k });
+    showToast("Consigli AI configurati: il sumo ti aspetta nella pagina Consigli", {
+      kind: "success",
+      duration: 6000,
+    });
+  }
+
+  return (
+    <Card
+      title="Consigli AI — l'analisi del sumo"
+      subtitle="Porti la TUA chiave (BYOK): la chiamata parte dal tuo browser, la chiave resta tua e nessun altro la usa"
+    >
+      <div className="flex flex-col gap-3 text-sm">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Field label="Provider">
+            <Select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value as "gemini" | "anthropic")}
+              aria-label="Provider AI"
+            >
+              <option value="gemini">Google Gemini — gratis (free tier)</option>
+              <option value="anthropic">Anthropic Claude — pochi centesimi/analisi</option>
+            </Select>
+          </Field>
+          <Field label="API key" hint={configured ? "Chiave salvata su questo dispositivo" : undefined}>
+            <Input
+              type="password"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+              placeholder={provider === "gemini" ? "AIza…" : "sk-ant-…"}
+              autoComplete="off"
+              aria-label="API key AI"
+            />
+          </Field>
+        </div>
+        <p className="text-xs text-faint">
+          {provider === "gemini" ? (
+            <>
+              Chiave gratuita in 2 minuti: vai su{" "}
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                aistudio.google.com/apikey
+              </a>
+              , accedi col tuo account Google e premi &quot;Create API key&quot;. Il piano
+              gratuito basta e avanza: l&apos;analisi usa 1-2 richieste al giorno.
+            </>
+          ) : (
+            <>
+              Chiave su{" "}
+              <a
+                href="https://console.anthropic.com/settings/keys"
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                console.anthropic.com
+              </a>
+              : un&apos;analisi costa meno di un centesimo (modello Haiku).
+            </>
+          )}{" "}
+          All&apos;AI viene inviato solo un riepilogo numerico aggregato: mai movimenti,
+          descrizioni o nomi dei conti. Dettagli nella pagina Privacy.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={save}>{configured ? "Aggiorna" : "Attiva i consigli AI"}</Button>
+          {configured && (
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                setKey("");
+                await update({ aiProvider: undefined, aiApiKey: undefined });
+                showToast("Consigli AI disattivati", { kind: "info" });
+              }}
+            >
+              Disattiva
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 

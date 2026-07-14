@@ -57,6 +57,14 @@ export default function PrivacyPage() {
                 sovraccaricare le fonti gratuite.
               </p>
               <p>
+                <strong className="text-ink">Consigli AI (opzionali)</strong>: se li attivi con
+                la <em>tua</em> chiave API, un riepilogo numerico aggregato (patrimonio,
+                allocazioni, medie di flusso, obiettivi, dati fiscali di sintesi) viene inviato
+                dal tuo browser al provider che scegli (Google Gemini o Anthropic) per generare
+                le analisi. Mai descrizioni dei movimenti, nomi dei conti o indirizzi dei
+                wallet. Senza chiave configurata, nulla viene inviato.
+              </p>
+              <p>
                 <strong className="text-ink">Sync tra dispositivi (opzionale)</strong>: se lo
                 attivi, un backup <strong className="text-ink">cifrato end-to-end</strong> con
                 la tua passphrase (AES-256) viene depositato su un server europeo per farlo

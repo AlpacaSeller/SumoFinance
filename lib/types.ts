@@ -95,6 +95,9 @@ export interface Settings {
   demoMode?: boolean;
   /** Codice del gruppo di sync E2E (la passphrase resta in localStorage). */
   syncId?: string;
+  /** Consigli AI (BYOK): provider e chiave dell'utente, mai dei nostri server. */
+  aiProvider?: "gemini" | "anthropic";
+  aiApiKey?: string;
 }
 
 export interface Account {

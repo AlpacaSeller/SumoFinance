@@ -9,7 +9,9 @@ const csp = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self'",
-  "connect-src 'self' https://api.coingecko.com https://api.frankfurter.dev https://api.frankfurter.app https://mempool.space https://cloudflare-eth.com https://eth.llamarpc.com https://api.mainnet-beta.solana.com",
+  // gli endpoint AI (Gemini/Anthropic) sono BYOK: chiamati dal browser solo se
+  // l'utente ha configurato la SUA chiave in Impostazioni → Consigli AI
+  "connect-src 'self' https://api.coingecko.com https://api.frankfurter.dev https://api.frankfurter.app https://mempool.space https://cloudflare-eth.com https://eth.llamarpc.com https://api.mainnet-beta.solana.com https://generativelanguage.googleapis.com https://api.anthropic.com",
   "worker-src 'self'",
   "frame-ancestors 'none'",
   "base-uri 'self'",
