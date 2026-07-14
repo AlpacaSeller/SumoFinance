@@ -6,7 +6,7 @@ import { useMemo, useState } from "react";
 import { Coins, FileDown, FileUp, Plus, TrendingDown, TrendingUp } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { useTable } from "@/lib/storage";
-import { fingerprint } from "@/lib/csv";
+import { fingerprint } from "@/lib/importRules";
 import {
   INCOME_CATEGORIES,
   PASSIVE_INCOME_CATEGORIES,
@@ -43,8 +43,14 @@ import {
   useMonthNav,
   type Movement,
 } from "@/components/movements";
-import { CsvImportWizard } from "@/components/CsvImportWizard";
+import dynamic from "next/dynamic";
 import { useOpenNew } from "@/lib/useOpenNew";
+
+// wizard (e papaparse) caricati solo quando l'utente apre l'import
+const CsvImportWizard = dynamic(
+  () => import("@/components/CsvImportWizard").then((m) => m.CsvImportWizard),
+  { ssr: false }
+);
 
 export default function EntratePage() {
   const { ready, data } = useFinancial();

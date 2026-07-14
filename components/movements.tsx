@@ -5,7 +5,7 @@
 import { useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, Pencil, Repeat, Trash2 } from "lucide-react";
 import { storage, useTable } from "@/lib/storage";
-import { applyRules, fingerprint } from "@/lib/csv";
+import { applyRules, fingerprint } from "@/lib/importRules";
 import { detectRecurringCandidates } from "@/lib/engine/recurring";
 import {
   uid,

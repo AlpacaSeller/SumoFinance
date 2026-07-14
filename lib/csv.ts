@@ -1,7 +1,7 @@
 // ── Import CSV: parsing, regole di categorizzazione, dedupe ─────────────────
 
 import Papa from "papaparse";
-import type { ImportColumnMapping, ImportRule } from "./types";
+import type { ImportColumnMapping } from "./types";
 import { parseItAmount, parseItDate } from "./format";
 
 export interface ParsedCsv {
@@ -80,24 +80,6 @@ export function mapRows(
   });
 }
 
-/** Applica le regole di categorizzazione: prima regola attiva che matcha. */
-export function applyRules(
-  description: string,
-  isIncome: boolean,
-  rules: ImportRule[]
-): string | null {
-  const desc = description.toLowerCase();
-  for (const rule of rules) {
-    if (!rule.active || !rule.pattern.trim()) continue;
-    if (rule.type === "entrata" && !isIncome) continue;
-    if (rule.type === "uscita" && isIncome) continue;
-    if (desc.includes(rule.pattern.trim().toLowerCase())) return rule.category;
-  }
-  return null;
-}
-
-/** Impronta per la deduplica: data + importo + descrizione normalizzata */
-export function fingerprint(date: string, amount: number, description: string): string {
-  const desc = description.toLowerCase().replace(/\s+/g, " ").trim();
-  return `${date}|${amount.toFixed(2)}|${desc}`;
-}
+// applyRules e fingerprint vivono in lib/importRules.ts (modulo leggero senza
+// papaparse); qui re-esportati per compatibilità dei consumatori del wizard.
+export { applyRules, fingerprint } from "./importRules";
