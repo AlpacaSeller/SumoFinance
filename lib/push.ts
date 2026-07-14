@@ -8,7 +8,7 @@
 import { storage } from "./storage";
 import { upcomingItems } from "./engine/calendar";
 import { todayISO } from "./format";
-import type { CalendarItem, Debt, RecurringTransaction } from "./types";
+import type { Asset, CalendarItem, Debt, RecurringTransaction } from "./types";
 
 const ENABLED_KEY = "pfos-push-enabled";
 const HORIZON_DAYS = 45;
@@ -61,6 +61,29 @@ async function buildReminders(): Promise<{ date: string; title: string; amount?:
   }));
 }
 
+/** Soglie di prezzo per il controllo mattutino del server: solo nome asset,
+ *  simbolo del provider e soglie — mai quantità o valori di posizione. */
+async function buildAlerts(): Promise<
+  { name: string; symbol: string; source: string; above?: number; below?: number }[]
+> {
+  const assets = await storage.list<Asset>("assets");
+  return assets
+    .filter(
+      (a) =>
+        (a.alertAbove != null || a.alertBelow != null) &&
+        a.symbol &&
+        (a.priceSource === "yahoo" || a.priceSource === "coingecko")
+    )
+    .slice(0, 20)
+    .map((a) => ({
+      name: a.name.slice(0, 60),
+      symbol: a.symbol as string,
+      source: a.priceSource,
+      above: a.alertAbove ?? undefined,
+      below: a.alertBelow ?? undefined,
+    }));
+}
+
 async function getSubscription(): Promise<PushSubscription | null> {
   const reg = await navigator.serviceWorker.ready;
   return reg.pushManager.getSubscription();
@@ -89,11 +112,11 @@ export async function enablePush(): Promise<void> {
 }
 
 async function postSubscription(subscription: PushSubscription): Promise<void> {
-  const reminders = await buildReminders();
+  const [reminders, alerts] = await Promise.all([buildReminders(), buildAlerts()]);
   const res = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: subscription.toJSON(), reminders }),
+    body: JSON.stringify({ subscription: subscription.toJSON(), reminders, alerts }),
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };

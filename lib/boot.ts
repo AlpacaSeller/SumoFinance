@@ -9,6 +9,7 @@ import { DEFAULT_SETTINGS, DEFAULT_TAX_STATE } from "./defaults";
 import type {
   Account,
   Asset,
+  CalendarItem,
   Debt,
   Expense,
   Income,
@@ -22,6 +23,32 @@ import { computeDueMovements } from "./engine/recurring";
 import { computeAggregates } from "./engine/aggregates";
 import { prunePots } from "./engine/tax";
 import { todayISO } from "./format";
+
+/** Badge sull'icona della PWA: numero di scadenze/rate di OGGI (iOS 16.4+
+ *  e desktop, solo app installata). Zero scadenze = badge rimosso. */
+export async function updateAppBadge(): Promise<void> {
+  try {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => Promise<void>;
+      clearAppBadge?: () => Promise<void>;
+    };
+    if (typeof nav.setAppBadge !== "function") return;
+    const [calendarItems, debts, recurring] = await Promise.all([
+      storage.list<CalendarItem>("calendarItems"),
+      storage.list<Debt>("debts"),
+      storage.list<RecurringTransaction>("recurringTransactions"),
+    ]);
+    const today = todayISO();
+    const { upcomingItems } = await import("./engine/calendar");
+    const count = upcomingItems(calendarItems, debts, recurring, 1, today).filter(
+      (x) => x.date === today
+    ).length;
+    if (count > 0) await nav.setAppBadge(count);
+    else await nav.clearAppBadge?.();
+  } catch {
+    /* browser senza Badging API */
+  }
+}
 
 /** Pota i tombstone di eliminazione più vecchi di 90 giorni (sync v2). */
 export async function pruneOldTombstones(): Promise<void> {

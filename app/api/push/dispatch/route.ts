@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import webpush from "web-push";
+import { sharedCacheGet, sharedCacheSet } from "@/lib/server/sharedCache";
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.trim();
 const SUPABASE_KEY = process.env.SUPABASE_PUBLISHABLE_KEY?.trim();
@@ -33,11 +34,66 @@ function todayRome(): string {
   return new Intl.DateTimeFormat("sv-SE", { timeZone: "Europe/Rome" }).format(new Date());
 }
 
+interface AlertRule {
+  name: string;
+  symbol: string;
+  source: string;
+  above?: number;
+  below?: number;
+}
+
 interface Row {
   endpoint: string;
   subscription: webpush.PushSubscription;
   reminders: { date: string; title: string; amount?: number }[];
+  alerts: AlertRule[] | null;
   last_sent: string | null;
+}
+
+/** Prezzo corrente per un alert, con cache condivisa (una richiesta per
+ *  simbolo per giro anche con molti utenti). Yahoo passa dal proxy interno
+ *  (che ha già la sua cache); CoinGecko è interrogato in EUR. */
+async function getAlertPrice(
+  origin: string,
+  rule: AlertRule,
+  runCache: Map<string, number | null>
+): Promise<number | null> {
+  const key = `${rule.source}:${rule.symbol}`;
+  if (runCache.has(key)) return runCache.get(key) ?? null;
+  let price: number | null = null;
+  try {
+    if (rule.source === "yahoo") {
+      const res = await fetch(
+        `${origin}/api/quote?symbol=${encodeURIComponent(rule.symbol)}`,
+        { signal: AbortSignal.timeout(12000), cache: "no-store" }
+      );
+      if (res.ok) price = ((await res.json()) as { price?: number }).price ?? null;
+    } else {
+      const cacheKey = `cg-price:${rule.symbol}`;
+      const cached = await sharedCacheGet(cacheKey);
+      if (cached && cached.ageMs < 30 * 60 * 1000) {
+        price = (cached.payload as { eur?: number }).eur ?? null;
+      } else {
+        const res = await fetch(
+          `https://api.coingecko.com/api/v3/simple/price?ids=${encodeURIComponent(rule.symbol)}&vs_currencies=eur`,
+          { signal: AbortSignal.timeout(12000), cache: "no-store" }
+        );
+        if (res.ok) {
+          const json = (await res.json()) as Record<string, { eur?: number }>;
+          price = json[rule.symbol]?.eur ?? null;
+          if (price != null) await sharedCacheSet(cacheKey, { eur: price });
+        }
+      }
+    }
+  } catch {
+    price = null;
+  }
+  runCache.set(key, price);
+  return price;
+}
+
+function fmtNum(n: number): string {
+  return n.toLocaleString("it-IT", { maximumFractionDigits: 2 });
 }
 
 export async function GET(req: NextRequest) {
@@ -54,26 +110,54 @@ export async function GET(req: NextRequest) {
   );
 
   const today = todayRome();
-  const res = await sb("push_subscriptions?select=endpoint,subscription,reminders,last_sent");
+  const res = await sb("push_subscriptions?select=endpoint,subscription,reminders,alerts,last_sent");
   if (!res.ok) {
     return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });
   }
   const rows = (await res.json()) as Row[];
+  const priceRunCache = new Map<string, number | null>();
+  const origin = req.nextUrl.origin;
 
   let sent = 0;
   let removed = 0;
   for (const row of rows) {
     if (row.last_sent === today) continue; // già notificato oggi (cron ri-eseguito)
     const due = (row.reminders || []).filter((r) => r.date === today);
-    if (due.length === 0) continue;
 
-    const lines = due.map(
-      (r) => `${r.title}${r.amount != null ? ` (${Math.abs(r.amount).toLocaleString("it-IT")} €)` : ""}`
-    );
+    // alert di prezzo: soglie superate al momento del controllo
+    const triggered: string[] = [];
+    for (const rule of row.alerts || []) {
+      const price = await getAlertPrice(origin, rule, priceRunCache);
+      if (price == null) continue;
+      if (rule.above != null && price >= rule.above) {
+        triggered.push(`${rule.name}: ${fmtNum(price)} — sopra la soglia di ${fmtNum(rule.above)}`);
+      } else if (rule.below != null && price <= rule.below) {
+        triggered.push(`${rule.name}: ${fmtNum(price)} — sotto la soglia di ${fmtNum(rule.below)}`);
+      }
+    }
+
+    if (due.length === 0 && triggered.length === 0) continue;
+
+    const lines = [
+      ...due.map(
+        (r) => `${r.title}${r.amount != null ? ` (${Math.abs(r.amount).toLocaleString("it-IT")} €)` : ""}`
+      ),
+      ...triggered,
+    ];
+    const title =
+      due.length > 0 && triggered.length > 0
+        ? "Scadenze e alert di oggi"
+        : triggered.length > 0
+          ? triggered.length === 1
+            ? "Alert di prezzo"
+            : `${triggered.length} alert di prezzo`
+          : due.length === 1
+            ? "Scadenza di oggi"
+            : `${due.length} scadenze oggi`;
     const payload = JSON.stringify({
-      title: due.length === 1 ? "Scadenza di oggi" : `${due.length} scadenze oggi`,
+      title,
       body: lines.join("\n"),
-      url: "/calendario",
+      url: triggered.length > 0 && due.length === 0 ? "/investimenti" : "/calendario",
     });
     try {
       await webpush.sendNotification(row.subscription, payload, { TTL: 12 * 3600 });

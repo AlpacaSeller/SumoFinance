@@ -32,10 +32,10 @@ import {
   TrendingDown,
   Wallet,
 } from "lucide-react";
-import { useTable } from "@/lib/storage";
-import type { Asset } from "@/lib/types";
+import { storage, useTable } from "@/lib/storage";
+import type { Asset, Expense, Income } from "@/lib/types";
 import { assetValue } from "@/lib/engine/aggregates";
-import { fmtEUR0 } from "@/lib/format";
+import { fmtDate, fmtEUR, fmtEUR0 } from "@/lib/format";
 
 interface CommandItem {
   id: string;
@@ -78,6 +78,31 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const assets = useTable<Asset>("assets");
+  // movimenti: caricati una volta all'apertura della palette (non live)
+  const [movements, setMovements] = useState<
+    { id: string; kind: "entrata" | "uscita"; description: string; category: string; amount: number; date: string; tags?: string[] }[]
+  >([]);
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    void (async () => {
+      const [incomes, expenses] = await Promise.all([
+        storage.list<Income>("incomes"),
+        storage.list<Expense>("expenses"),
+      ]);
+      if (cancelled) return;
+      const recent = [
+        ...incomes.map((m) => ({ ...m, kind: "entrata" as const })),
+        ...expenses.map((m) => ({ ...m, kind: "uscita" as const })),
+      ]
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 600);
+      setMovements(recent);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   const open = useMemo(() => () => setIsOpen(true), []);
   const close = () => {
@@ -154,8 +179,19 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
       keywords: `${a.ticker ?? ""} ${a.assetClass}`,
       run: () => router.push(`/investimenti/${a.id}`),
     }));
-    return [...nav, ...actions, ...assetItems];
-  }, [assets, router]);
+    const movementItems: CommandItem[] = movements.map((m) => ({
+      id: `mov:${m.kind}:${m.id}`,
+      label: m.description,
+      hint: `${m.kind} · ${fmtDate(m.date)} · ${fmtEUR(m.amount)}`,
+      icon: m.kind === "entrata" ? <Coins /> : <TrendingDown />,
+      keywords: `${m.category} ${(m.tags ?? []).join(" ")}`,
+      run: () =>
+        router.push(
+          `/${m.kind === "entrata" ? "entrate" : "uscite"}?q=${encodeURIComponent(m.description)}`
+        ),
+    }));
+    return [...nav, ...actions, ...assetItems, ...movementItems];
+  }, [assets, movements, router]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

@@ -222,6 +222,7 @@ export function MovementModal({
   settings,
   onClose,
   existingFingerprints,
+  draft,
 }: {
   kind: MovementKind;
   editing: Movement | "new" | null;
@@ -229,17 +230,27 @@ export function MovementModal({
   settings: Settings;
   onClose: () => void;
   existingFingerprints?: Set<string>;
+  /** precompilazione per i nuovi movimenti (es. scontrino letto dall'AI) */
+  draft?: Partial<Movement>;
 }) {
   const { showToast } = useToast();
   const isNew = editing === "new";
   const base = isNew ? null : editing;
-  const [description, setDescription] = useState(base?.description ?? "");
-  const [category, setCategory] = useState(base?.category ?? categories[0] ?? "Altro");
-  const [categoryTouched, setCategoryTouched] = useState(!isNew);
+  const [description, setDescription] = useState(base?.description ?? draft?.description ?? "");
+  const [category, setCategory] = useState(
+    base?.category ?? draft?.category ?? categories[0] ?? "Altro"
+  );
+  const [categoryTouched, setCategoryTouched] = useState(!isNew || Boolean(draft?.category));
   const [autoApplied, setAutoApplied] = useState(false);
   const [newCategory, setNewCategory] = useState("");
-  const [amount, setAmount] = useState(base ? String(base.amount).replace(".", ",") : "");
-  const [date, setDate] = useState(base?.date ?? todayISO());
+  const [amount, setAmount] = useState(
+    base
+      ? String(base.amount).replace(".", ",")
+      : draft?.amount != null
+        ? String(draft.amount).replace(".", ",")
+        : ""
+  );
+  const [date, setDate] = useState(base?.date ?? draft?.date ?? todayISO());
   const [tagsInput, setTagsInput] = useState(base?.tags?.join(", ") ?? "");
   const [dupConfirm, setDupConfirm] = useState(false);
   const table = kind === "entrata" ? "incomes" : "expenses";

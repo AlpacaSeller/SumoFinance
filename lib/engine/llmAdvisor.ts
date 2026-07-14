@@ -270,6 +270,136 @@ export async function askSumo(
   return cleaned;
 }
 
+// ── Scontrino → movimento (vision) ──────────────────────────────────────────
+
+export interface ReceiptDraft {
+  date?: string;
+  description?: string;
+  amount?: number;
+  category?: string;
+}
+
+function receiptPrompt(categories: string[]): string {
+  return `Leggi la foto di questo scontrino/ricevuta italiana ed estrai i dati della spesa.
+Rispondi SOLO con un oggetto JSON (niente testo attorno, niente markdown):
+{"data": "YYYY-MM-DD" | null, "esercente": "nome breve del negozio/servizio" | null, "importo": numero totale in euro (usa il TOTALE, punto come separatore decimale) | null, "categoria": una tra [${categories.map((c) => `"${c}"`).join(", ")}] | null}
+Se un campo non è leggibile usa null. Non inventare.`;
+}
+
+/** Estrae un oggetto JSON anche se avvolto in testo o fence. */
+export function parseJsonObject(text: string): Record<string, unknown> {
+  let raw = text.trim();
+  const fence = raw.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) raw = fence[1].trim();
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("Il modello non ha restituito un oggetto JSON");
+  }
+  return JSON.parse(raw.slice(start, end + 1)) as Record<string, unknown>;
+}
+
+/** Foto di uno scontrino → bozza di uscita da confermare. BYOK vision. */
+export async function extractReceipt(
+  settings: Settings,
+  imageDataUrl: string,
+  categories: string[]
+): Promise<ReceiptDraft> {
+  const provider = settings.aiProvider;
+  const apiKey = settings.aiApiKey?.trim();
+  if (!provider || !apiKey) throw new Error("Configura provider e chiave in Impostazioni");
+  const match = imageDataUrl.match(/^data:(image\/[a-z+]+);base64,(.+)$/);
+  if (!match) throw new Error("Immagine non valida");
+  const [, mime, b64] = match;
+  const prompt = receiptPrompt(categories);
+
+  let text = "";
+  if (provider === "gemini") {
+    let lastErr = "";
+    for (const model of GEMINI_MODELS) {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
+          body: JSON.stringify({
+            contents: [
+              {
+                role: "user",
+                parts: [{ text: prompt }, { inline_data: { mime_type: mime, data: b64 } }],
+              },
+            ],
+            generationConfig: { temperature: 0.1, maxOutputTokens: 400 },
+          }),
+          signal: AbortSignal.timeout(45000),
+        }
+      );
+      if (res.status === 404) continue;
+      if (res.status === 400 || res.status === 401 || res.status === 403) {
+        throw new Error("Chiave Gemini non valida o senza permessi");
+      }
+      if (res.status === 429) throw new Error("Limite gratuito Gemini raggiunto: riprova più tardi");
+      if (!res.ok) {
+        lastErr = `Gemini ha risposto ${res.status}`;
+        continue;
+      }
+      const json = (await res.json()) as {
+        candidates?: { content?: { parts?: { text?: string }[] } }[];
+      };
+      text = json.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+      if (text) break;
+      lastErr = "Risposta vuota da Gemini";
+    }
+    if (!text) throw new Error(lastErr || "Nessun modello Gemini disponibile");
+  } else {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: ANTHROPIC_MODEL,
+        max_tokens: 400,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "image", source: { type: "base64", media_type: mime, data: b64 } },
+              { type: "text", text: prompt },
+            ],
+          },
+        ],
+      }),
+      signal: AbortSignal.timeout(45000),
+    });
+    if (res.status === 401 || res.status === 403) throw new Error("Chiave Anthropic non valida");
+    if (res.status === 429) throw new Error("Rate limit Anthropic: riprova tra poco");
+    if (!res.ok) throw new Error(`Anthropic ha risposto ${res.status}`);
+    const json = (await res.json()) as { content?: { type: string; text?: string }[] };
+    text = (json.content ?? []).filter((b) => b.type === "text").map((b) => b.text ?? "").join("");
+  }
+
+  const obj = parseJsonObject(text);
+  const draft: ReceiptDraft = {};
+  if (typeof obj.data === "string" && /^\d{4}-\d{2}-\d{2}$/.test(obj.data)) draft.date = obj.data;
+  if (typeof obj.esercente === "string" && obj.esercente.trim()) {
+    draft.description = obj.esercente.trim().slice(0, 80);
+  }
+  if (typeof obj.importo === "number" && Number.isFinite(obj.importo) && obj.importo > 0) {
+    draft.amount = Math.round(obj.importo * 100) / 100;
+  }
+  if (typeof obj.categoria === "string" && categories.includes(obj.categoria)) {
+    draft.category = obj.categoria;
+  }
+  if (!draft.amount && !draft.description) {
+    throw new Error("Non sono riuscito a leggere lo scontrino: riprova con una foto più nitida");
+  }
+  return draft;
+}
+
 // ── cache: un'analisi al giorno per impronta dei dati ───────────────────────
 
 const CACHE_KEY = "pfos-ai-advice";

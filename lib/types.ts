@@ -138,6 +138,10 @@ export interface Asset {
   tokenDecimals?: number; // ERC-20: decimali del token (default 18)
   exchange?: string; // borsa di quotazione (dalla ricerca)
   ter?: number; // TER % annuo (inserito a mano: non esiste fonte gratuita)
+  /** Alert di prezzo via push (nella valuta di quotazione del provider):
+   *  notifica mattutina quando il prezzo supera/scende sotto la soglia. */
+  alertAbove?: number;
+  alertBelow?: number;
 }
 
 export type WalletChain = "bitcoin" | "ethereum" | "solana";

@@ -14,6 +14,7 @@ import {
   pruneStalePriceHistory,
   pruneOldTombstones,
   ensurePersistentStorage,
+  updateAppBadge,
 } from "@/lib/boot";
 import { autoSyncIfDue, refreshAccountRates } from "@/lib/prices/sync";
 import { runAutoBackup } from "@/lib/autobackup";
@@ -45,6 +46,7 @@ async function runDailyTasks(showToast: Toast, goToBackup: () => void) {
   pruneStalePriceHistory().catch(() => {});
   pruneOldTombstones().catch(() => {}); // tombstone sync v2 oltre i 90 giorni
   refreshPushReminders().catch(() => {}); // promemoria push aggiornati (se attivi)
+  updateAppBadge().catch(() => {}); // numeretto scadenze di oggi sull'icona PWA
   ensurePersistentStorage().catch(() => {}); // protegge IndexedDB dall'eviction
   runAutoBackup().then((r) => {
     if (r.status === "permission-needed") {

@@ -2,8 +2,8 @@
 
 // ── Uscite & budget ─────────────────────────────────────────────────────────
 
-import { useMemo, useState } from "react";
-import { FileDown, FileUp, Pencil, Plus, TrendingDown } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { Camera, FileDown, FileUp, Pencil, Plus, TrendingDown } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { storage, useTable } from "@/lib/storage";
 import { fingerprint } from "@/lib/importRules";
@@ -15,6 +15,7 @@ import {
 } from "@/lib/types";
 import { sumInMonth } from "@/lib/engine/aggregates";
 import { futureValueMonthly } from "@/lib/engine/montecarlo";
+import { extractReceipt } from "@/lib/engine/llmAdvisor";
 import {
   fmtEUR,
   fmtEUR0,
@@ -65,9 +66,15 @@ const CsvImportWizard = dynamic(
 export default function UscitePage() {
   const { ready, data, derived } = useFinancial();
   const [editing, setEditing] = useState<Movement | "new" | null>(null);
+  const [draft, setDraft] = useState<Partial<Movement> | undefined>(undefined);
+  const [reading, setReading] = useState(false);
+  const receiptInput = useRef<HTMLInputElement>(null);
   const [importOpen, setImportOpen] = useState(false);
   const [overrideFor, setOverrideFor] = useState<string | null>(null);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() =>
+    typeof window === "undefined" ? "" : (new URLSearchParams(window.location.search).get("q") ?? "")
+  );
+  const { showToast } = useToast();
   const nav = useMonthNav();
   useOpenNew(() => setEditing("new"));
   const rules = useTable<ImportRule>("importRules") ?? [];
@@ -122,6 +129,44 @@ export default function UscitePage() {
 
   if (!ready) return <LoadingState />;
 
+  const aiConfigured = Boolean(data.settings.aiProvider && data.settings.aiApiKey);
+
+  /** ridimensiona la foto (max 1280px, jpeg) prima di mandarla all'AI */
+  async function fileToDataUrl(file: File): Promise<string> {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, 1280 / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    return canvas.toDataURL("image/jpeg", 0.85);
+  }
+
+  async function onReceiptPicked(file: File | undefined) {
+    if (!file) return;
+    setReading(true);
+    try {
+      const dataUrl = await fileToDataUrl(file);
+      const parsed = await extractReceipt(data.settings, dataUrl, categories);
+      setDraft({
+        description: parsed.description,
+        amount: parsed.amount,
+        date: parsed.date,
+        category: parsed.category,
+      });
+      setEditing("new");
+      showToast("Scontrino letto: controlla i campi e salva", { kind: "success" });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Lettura non riuscita", {
+        kind: "error",
+        duration: 7000,
+      });
+    } finally {
+      setReading(false);
+      if (receiptInput.current) receiptInput.current.value = "";
+    }
+  }
+
   const monthExpenses = data.expenses.filter((e) => monthKey(e.date) === nav.key);
   const spentThisMonth = derived.expenseMonth;
   const budgetTotal = derived.totalBudget;
@@ -133,6 +178,26 @@ export default function UscitePage() {
         title="Uscite & budget"
         actions={
           <>
+            {aiConfigured && (
+              <>
+                <input
+                  ref={receiptInput}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  aria-label="Foto dello scontrino"
+                  onChange={(e) => void onReceiptPicked(e.target.files?.[0])}
+                />
+                <Button
+                  variant="outline"
+                  onClick={() => receiptInput.current?.click()}
+                  disabled={reading}
+                >
+                  <Camera className="size-4" /> {reading ? "Il sumo legge…" : "Da foto"}
+                </Button>
+              </>
+            )}
             <Button variant="outline" onClick={() => setImportOpen(true)}>
               <FileUp className="size-4" /> Importa CSV
             </Button>
@@ -185,12 +250,18 @@ export default function UscitePage() {
               {donutMonth.length > 0 ? (
                 <>
                   <AllocationDonut data={donutMonth} height={190} />
-                  <ul className="mt-2 flex flex-col gap-1.5 text-sm">
+                  <ul className="mt-2 flex flex-col gap-0.5 text-sm">
                     {donutMonth.slice(0, 6).map((row) => (
-                      <li key={row.name} className="flex items-center gap-2">
-                        <span className="size-2.5 rounded-full" style={{ background: row.color }} />
-                        <span className="flex-1 text-soft">{row.name}</span>
-                        <span className="tnum font-medium">{fmtEUR0(row.value)}</span>
+                      <li key={row.name}>
+                        <button
+                          onClick={() => setQuery(row.name)}
+                          title={`Vedi tutti i movimenti di ${row.name}`}
+                          className="flex min-h-9 w-full items-center gap-2 rounded-lg px-1 text-left hover:bg-surface-2"
+                        >
+                          <span className="size-2.5 rounded-full" style={{ background: row.color }} />
+                          <span className="flex-1 text-soft">{row.name}</span>
+                          <span className="tnum font-medium">{fmtEUR0(row.value)}</span>
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -375,7 +446,11 @@ export default function UscitePage() {
         categories={categories}
         settings={data.settings}
         existingFingerprints={existingFingerprints}
-        onClose={() => setEditing(null)}
+        draft={draft}
+        onClose={() => {
+          setEditing(null);
+          setDraft(undefined);
+        }}
       />
       {importOpen && (
         <CsvImportWizard

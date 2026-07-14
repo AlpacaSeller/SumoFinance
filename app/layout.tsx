@@ -30,6 +30,23 @@ export const metadata: Metadata = {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
   },
+  metadataBase: new URL("https://sumo-finance.vercel.app"),
+  openGraph: {
+    title: "Sumo Finance — il tuo OS finanziario",
+    description:
+      "Patrimonio, budget, investimenti, tasse e obiettivi in un'unica app local-first: i dati restano sul tuo dispositivo.",
+    url: "https://sumo-finance.vercel.app",
+    siteName: "Sumo Finance",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    locale: "it_IT",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Sumo Finance — il tuo OS finanziario",
+    description: "Finanza personale local-first: solida e ben piantata, come un sumo.",
+    images: ["/og.png"],
+  },
 };
 
 export const viewport: Viewport = {

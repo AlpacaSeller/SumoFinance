@@ -56,7 +56,9 @@ export default function EntratePage() {
   const { ready, data } = useFinancial();
   const [editing, setEditing] = useState<Movement | "new" | null>(null);
   const [importOpen, setImportOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(() =>
+    typeof window === "undefined" ? "" : (new URLSearchParams(window.location.search).get("q") ?? "")
+  );
   const nav = useMonthNav();
   useOpenNew(() => setEditing("new"));
   const rules = useTable<ImportRule>("importRules") ?? [];

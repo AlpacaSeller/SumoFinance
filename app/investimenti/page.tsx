@@ -521,6 +521,12 @@ function AssetModal({
   const [tokenDecimals, setTokenDecimals] = useState(String(base?.tokenDecimals ?? 18));
   const [exchange, setExchange] = useState(base?.exchange ?? "");
   const [ter, setTer] = useState(base?.ter != null ? String(base.ter).replace(".", ",") : "");
+  const [alertAbove, setAlertAbove] = useState(
+    base?.alertAbove != null ? String(base.alertAbove).replace(".", ",") : ""
+  );
+  const [alertBelow, setAlertBelow] = useState(
+    base?.alertBelow != null ? String(base.alertBelow).replace(".", ",") : ""
+  );
   const [saving, setSaving] = useState(false);
 
   // aliquota effettiva calcolata dalla classe (crypto 33% dal 2026, whitelist 12,5%…)
@@ -586,6 +592,8 @@ function AssetModal({
           : undefined,
       exchange: exchange.trim() || undefined,
       ter: parseItAmount(ter) ?? undefined,
+      alertAbove: priceSource !== "manuale" ? (parseItAmount(alertAbove) ?? undefined) : undefined,
+      alertBelow: priceSource !== "manuale" ? (parseItAmount(alertBelow) ?? undefined) : undefined,
     };
     setSaving(true);
     await storage.put("assets", asset);
@@ -785,6 +793,30 @@ function AssetModal({
               placeholder="es. 0,22"
             />
           </Field>
+        )}
+
+        {priceSource !== "manuale" && (
+          <>
+            <Field
+              label="Alert prezzo: sopra (facoltativo)"
+              hint="Notifica push mattutina se il prezzo supera la soglia (valuta di quotazione)"
+            >
+              <Input
+                inputMode="decimal"
+                value={alertAbove}
+                onChange={(e) => setAlertAbove(e.target.value)}
+                placeholder="es. 150"
+              />
+            </Field>
+            <Field label="Alert prezzo: sotto (facoltativo)">
+              <Input
+                inputMode="decimal"
+                value={alertBelow}
+                onChange={(e) => setAlertBelow(e.target.value)}
+                placeholder="es. 90"
+              />
+            </Field>
+          </>
         )}
 
         {assetClass === "Crypto" && (

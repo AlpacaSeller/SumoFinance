@@ -47,11 +47,40 @@ function sanitizeReminders(input: unknown): Reminder[] {
     }));
 }
 
+interface AlertRule {
+  name: string;
+  symbol: string;
+  source: string;
+  above?: number;
+  below?: number;
+}
+
+function sanitizeAlerts(input: unknown): AlertRule[] {
+  if (!Array.isArray(input)) return [];
+  return input
+    .filter(
+      (a): a is { name: unknown; symbol: unknown; source: unknown; above?: unknown; below?: unknown } =>
+        typeof a === "object" && a !== null &&
+        typeof (a as { symbol?: unknown }).symbol === "string" &&
+        typeof (a as { source?: unknown }).source === "string" &&
+        ["yahoo", "coingecko"].includes((a as { source: string }).source)
+    )
+    .slice(0, 20)
+    .map((a) => ({
+      name: String(a.name ?? "").slice(0, 60),
+      symbol: String(a.symbol).slice(0, 40),
+      source: String(a.source),
+      above: typeof a.above === "number" && Number.isFinite(a.above) ? a.above : undefined,
+      below: typeof a.below === "number" && Number.isFinite(a.below) ? a.below : undefined,
+    }))
+    .filter((a) => a.above != null || a.below != null);
+}
+
 export async function POST(req: NextRequest) {
   if (!SUPABASE_URL || !SUPABASE_KEY) {
     return NextResponse.json({ error: "Push non configurato sul server" }, { status: 503 });
   }
-  let body: { subscription?: { endpoint?: unknown }; reminders?: unknown };
+  let body: { subscription?: { endpoint?: unknown }; reminders?: unknown; alerts?: unknown };
   try {
     body = await req.json();
   } catch {
@@ -71,6 +100,7 @@ export async function POST(req: NextRequest) {
           endpoint,
           subscription: sub,
           reminders: sanitizeReminders(body.reminders),
+          alerts: sanitizeAlerts(body.alerts),
           updated_at: new Date().toISOString(),
         },
       ]),
