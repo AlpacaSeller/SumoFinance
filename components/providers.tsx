@@ -14,6 +14,7 @@ import { runAutoBackup } from "@/lib/autobackup";
 import { todayISO } from "@/lib/format";
 import { pushSync, syncOnOpen } from "@/lib/sync";
 import { syncDirtyAt } from "@/lib/syncDirty";
+import { refreshPushReminders } from "@/lib/push";
 
 let lastBootDate = ""; // giorno dell'ultima esecuzione delle attività di avvio
 
@@ -36,6 +37,7 @@ async function runDailyTasks(showToast: Toast, goToBackup: () => void) {
   autoSyncIfDue().catch(() => {});
   refreshAccountRates().catch(() => {});
   pruneStalePriceHistory().catch(() => {});
+  refreshPushReminders().catch(() => {}); // promemoria push aggiornati (se attivi)
   runAutoBackup().then((r) => {
     if (r.status === "permission-needed") {
       showToast(

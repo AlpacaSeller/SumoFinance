@@ -29,6 +29,7 @@ import {
   lastSyncAt,
   pushSync,
 } from "@/lib/sync";
+import { disablePush, enablePush, pushLocallyEnabled, pushNeedsInstall, pushSupported } from "@/lib/push";
 import { fmtDateTime, fmtNum, parseItAmount } from "@/lib/format";
 import { useToast } from "@/components/toast";
 import { useTheme, type ThemePreference } from "@/components/theme";
@@ -78,6 +79,7 @@ export default function ImpostazioniPage() {
         <SecuritySection settings={s} update={update} showToast={showToast} />
         <BackupSection settings={s} update={update} />
         <DeviceSyncSection settings={s} />
+        <PushSection />
         <Card title="App sul telefono" subtitle="Sumo Finance è una PWA installabile">
           <div className="flex items-start gap-3 text-sm text-soft">
             <Smartphone className="mt-0.5 size-5 shrink-0 text-brand-ink" />
@@ -967,6 +969,85 @@ function AiSection({
             </Button>
           )}
         </div>
+      </div>
+    </Card>
+  );
+}
+
+// ── Notifiche push ──────────────────────────────────────────────────────────
+
+function PushSection() {
+  const { showToast } = useToast();
+  const [enabled, setEnabled] = useState(() => pushLocallyEnabled());
+  const [busy, setBusy] = useState(false);
+  const supported = typeof window !== "undefined" && pushSupported();
+  const needsInstall = pushNeedsInstall();
+
+  async function enable() {
+    setBusy(true);
+    try {
+      await enablePush();
+      setEnabled(true);
+      showToast("Notifiche attive: promemoria la mattina delle scadenze", { kind: "success" });
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Attivazione non riuscita", { kind: "error" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function disable() {
+    setBusy(true);
+    try {
+      await disablePush();
+      setEnabled(false);
+      showToast("Notifiche disattivate e promemoria eliminati dal server", { kind: "info" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card
+      title="Notifiche push"
+      subtitle="La mattina di una scadenza o di una rata ricevi un promemoria sul dispositivo"
+    >
+      <div className="flex flex-col gap-3 text-sm">
+        {!supported ? (
+          <p className="text-xs text-faint">
+            Questo browser non supporta le notifiche push.
+          </p>
+        ) : needsInstall ? (
+          <p className="text-xs text-soft">
+            Su iPhone le notifiche funzionano solo con l&apos;app installata:{" "}
+            <strong className="text-ink">
+              Safari → condividi → &quot;Aggiungi a Home&quot;
+            </strong>
+            , poi riapri Sumo Finance da lì e attiva da questa pagina.
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-soft">
+              Attivandole, i promemoria dei prossimi 45 giorni (titolo, data e importo di
+              scadenze e rate) vengono depositati sul server per l&apos;invio programmato:
+              nient&apos;altro lascia il dispositivo. Revocabile in ogni momento.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {enabled ? (
+                <>
+                  <Badge tone="pos">attive</Badge>
+                  <Button variant="ghost" onClick={disable} disabled={busy}>
+                    Disattiva
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" onClick={enable} disabled={busy}>
+                  {busy ? "Attivazione…" : "Attiva le notifiche"}
+                </Button>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </Card>
   );

@@ -4,7 +4,7 @@
 // qui: hanno già cache applicative dedicate (IndexedDB + cache server).
 // Il prefisso "pfos" della cache è un identificatore interno storico.
 
-const CACHE = "pfos-shell-v4";
+const CACHE = "pfos-shell-v5";
 const SHELL = ["/", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/icon-512.png"];
 
 // NON chiamiamo skipWaiting in install: il nuovo SW resta "waiting" finché
@@ -17,6 +17,40 @@ self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+// ── Web Push: promemoria di scadenze e rate (opt-in da Impostazioni) ────────
+self.addEventListener("push", (event) => {
+  let data = { title: "Sumo Finance", body: "", url: "/calendario" };
+  try {
+    data = { ...data, ...event.data.json() };
+  } catch {
+    /* payload non JSON: usa i default */
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      data: { url: data.url },
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = (event.notification.data && event.notification.data.url) || "/calendario";
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if ("focus" in client) {
+          client.navigate(url);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    })
+  );
 });
 
 self.addEventListener("activate", (event) => {

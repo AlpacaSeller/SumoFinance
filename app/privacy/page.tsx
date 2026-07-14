@@ -65,6 +65,13 @@ export default function PrivacyPage() {
                 wallet. Senza chiave configurata, nulla viene inviato.
               </p>
               <p>
+                <strong className="text-ink">Notifiche push (opzionali)</strong>: se le attivi,
+                i promemoria dei prossimi 45 giorni (titolo, data e importo arrotondato di
+                scadenze e rate) vengono depositati sul server per programmare l&apos;invio
+                mattutino. Nient&apos;altro: né movimenti né saldi. Disattivando le notifiche i
+                promemoria vengono eliminati.
+              </p>
+              <p>
                 <strong className="text-ink">Sync tra dispositivi (opzionale)</strong>: se lo
                 attivi, un backup <strong className="text-ink">cifrato end-to-end</strong> con
                 la tua passphrase (AES-256) viene depositato su un server europeo per farlo
