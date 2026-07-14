@@ -23,6 +23,15 @@ import { computeAggregates } from "./engine/aggregates";
 import { prunePots } from "./engine/tax";
 import { todayISO } from "./format";
 
+/** Pota i tombstone di eliminazione più vecchi di 90 giorni (sync v2). */
+export async function pruneOldTombstones(): Promise<void> {
+  const cutoff = new Date(Date.now() - 90 * 86400000).toISOString();
+  const all = await storage.list<{ id: string; deletedAt: string }>("deletions");
+  for (const d of all) {
+    if (d.deletedAt < cutoff) await storage.remove("deletions", d.id);
+  }
+}
+
 /** Chiede al browser lo storage "persistente": protegge IndexedDB dalla
  *  cancellazione automatica quando il disco è sotto pressione. Idempotente. */
 export async function ensurePersistentStorage(): Promise<boolean> {

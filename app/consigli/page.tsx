@@ -8,13 +8,14 @@ import { RefreshCcw } from "lucide-react";
 import { useFinancial } from "@/lib/useFinancial";
 import { advisor } from "@/lib/engine/advisor";
 import {
+  askSumo,
   generateLlmAdvice,
   readCachedAdvice,
   writeCachedAdvice,
   type LlmAdviceResult,
 } from "@/lib/engine/llmAdvisor";
 import { fmtDateTime } from "@/lib/format";
-import { Button, EmptyState, LoadingState, PageHeader } from "@/components/ui";
+import { BoldText, Button, EmptyState, Input, LoadingState, PageHeader } from "@/components/ui";
 import { AdviceCard } from "@/components/AdviceCard";
 import { SumoMascot } from "@/components/Mascot";
 
@@ -116,7 +117,69 @@ function AiAdviceSection() {
         Generata dall&apos;AI sul riepilogo aggregato dei tuoi dati: non è consulenza
         finanziaria. Un&apos;analisi al giorno, rigenerabile a mano.
       </p>
+      <AskSumoBox />
     </section>
+  );
+}
+
+function AskSumoBox() {
+  const { data, derived } = useFinancial();
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function ask(e: React.FormEvent) {
+    e.preventDefault();
+    if (asking || question.trim().length < 3) return;
+    setAsking(true);
+    setError(null);
+    try {
+      const text = await askSumo(data.settings, data, derived, question);
+      setAnswer(text);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Domanda non riuscita: riprova");
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  return (
+    <div className="mt-4">
+      <form onSubmit={ask} className="flex flex-wrap items-center gap-2">
+        <Input
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder='Chiedi al sumo… es. "posso permettermi 200 € al mese di PAC?"'
+          aria-label="Fai una domanda al sumo"
+          className="min-w-64 flex-1"
+          maxLength={500}
+        />
+        <Button type="submit" disabled={asking || question.trim().length < 3}>
+          {asking ? "Il sumo riflette…" : "Chiedi"}
+        </Button>
+      </form>
+      {error && (
+        <div className="mt-3 rounded-2xl border border-warn/25 bg-warn-soft px-4 py-3 text-sm text-warn">
+          {error}
+        </div>
+      )}
+      {answer && !asking && (
+        <div className="mt-3 flex items-start gap-3 rounded-2xl border border-line bg-surface-2 p-4">
+          <SumoMascot size={44} className="shrink-0" />
+          <div className="flex flex-col gap-2 text-sm leading-relaxed text-ink">
+            {answer.split(/\n{2,}/).map((par, i) => (
+              <p key={i}>
+                <BoldText text={par} />
+              </p>
+            ))}
+            <p className="text-xs text-faint">
+              Risposta AI sui tuoi numeri aggregati: non è consulenza finanziaria.
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

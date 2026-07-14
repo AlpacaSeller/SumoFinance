@@ -12,6 +12,7 @@ import {
   runBootTasks,
   backupReminderDue,
   pruneStalePriceHistory,
+  pruneOldTombstones,
   ensurePersistentStorage,
 } from "@/lib/boot";
 import { autoSyncIfDue, refreshAccountRates } from "@/lib/prices/sync";
@@ -42,6 +43,7 @@ async function runDailyTasks(showToast: Toast, goToBackup: () => void) {
   autoSyncIfDue().catch(() => {});
   refreshAccountRates().catch(() => {});
   pruneStalePriceHistory().catch(() => {});
+  pruneOldTombstones().catch(() => {}); // tombstone sync v2 oltre i 90 giorni
   refreshPushReminders().catch(() => {}); // promemoria push aggiornati (se attivi)
   ensurePersistentStorage().catch(() => {}); // protegge IndexedDB dall'eviction
   runAutoBackup().then((r) => {
@@ -93,6 +95,8 @@ function BootTasks({ children }: { children: ReactNode }) {
         const sync = await syncOnOpen();
         if (sync === "importato") {
           showToast("Dati sincronizzati dall'altro dispositivo", { kind: "success" });
+        } else if (sync === "fuso") {
+          showToast("Modifiche di entrambi i dispositivi unite senza perdite", { kind: "success" });
         }
         if (lastBootDate !== todayISO()) {
           await runDailyTasks(showToast, () => router.push("/impostazioni#backup"));
@@ -134,6 +138,8 @@ function BootTasks({ children }: { children: ReactNode }) {
         .then((r) => {
           if (r === "importato") {
             showToast("Dati sincronizzati dall'altro dispositivo", { kind: "success" });
+          } else if (r === "fuso") {
+            showToast("Modifiche di entrambi i dispositivi unite senza perdite", { kind: "success" });
           }
         })
         .catch(() => {});

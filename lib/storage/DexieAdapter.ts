@@ -6,6 +6,13 @@ import { markSyncDirty } from "../syncDirty";
 /** Cache locali: non sono "dati dell'utente", non fanno scattare il sync. */
 const CACHE_TABLES = new Set<TableName>(["priceHistoryCache", "economicEventsCache"]);
 
+/** Tabelle senza timbro updatedAt né tombstone (cache + i tombstone stessi). */
+const UNSTAMPED = new Set<TableName>(["priceHistoryCache", "economicEventsCache", "deletions"]);
+
+function stamp<T extends { id: string }>(item: T): T {
+  return { ...item, updatedAt: new Date().toISOString() };
+}
+
 export class DexieAdapter implements StorageAdapter {
   async list<T>(table: TableName): Promise<T[]> {
     return (await db.table(table).toArray()) as T[];
@@ -16,17 +23,26 @@ export class DexieAdapter implements StorageAdapter {
   }
 
   async put<T extends { id: string }>(table: TableName, item: T): Promise<void> {
-    await db.table(table).put(item);
+    await db.table(table).put(UNSTAMPED.has(table) ? item : stamp(item));
     if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 
   async bulkPut<T extends { id: string }>(table: TableName, items: T[]): Promise<void> {
-    await db.table(table).bulkPut(items);
+    await db.table(table).bulkPut(UNSTAMPED.has(table) ? items : items.map(stamp));
     if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 
   async remove(table: TableName, id: string): Promise<void> {
     await db.table(table).delete(id);
+    if (!UNSTAMPED.has(table)) {
+      // tombstone: il sync v2 propaga la cancellazione invece di risuscitarla
+      await db.deletions.put({
+        id: `${table}:${id}`,
+        table,
+        rowId: id,
+        deletedAt: new Date().toISOString(),
+      });
+    }
     if (!CACHE_TABLES.has(table)) markSyncDirty();
   }
 

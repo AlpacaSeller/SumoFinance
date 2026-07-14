@@ -9,6 +9,7 @@ import type {
   AssetTransaction,
   CalendarItem,
   Debt,
+  Deletion,
   EconomicEventsCache,
   Expense,
   Goal,
@@ -41,6 +42,9 @@ export class PfosDB extends Dexie {
   economicEventsCache!: Table<EconomicEventsCache, string>;
   taxState!: Table<TaxState, string>;
   priceHistoryCache!: Table<PriceHistoryCache, string>;
+  /** Tombstone delle eliminazioni: permettono al sync v2 di propagare le
+   *  cancellazioni tra dispositivi invece di risuscitare le righe. */
+  deletions!: Table<Deletion, string>;
   /** Handle della cartella di backup automatico (File System Access API).
    *  NON è in TABLE_NAMES: non è serializzabile in JSON e non deve finire
    *  nei backup; viene però azzerata da wipeAll. */
@@ -69,6 +73,10 @@ export class PfosDB extends Dexie {
     // v3: cartella di backup automatico
     this.version(3).stores({
       fsHandles: "id",
+    });
+    // v4: tombstone delle eliminazioni (sync v2, merge per riga)
+    this.version(4).stores({
+      deletions: "id, deletedAt",
     });
     // v2: operazioni di acquisto/vendita; gli asset esistenti diventano la
     // "posizione iniziale" (base) da cui si ricalcola la posizione attuale
@@ -108,6 +116,7 @@ export const TABLE_NAMES = [
   "economicEventsCache",
   "taxState",
   "priceHistoryCache",
+  "deletions",
 ] as const;
 
 export type TableName = (typeof TABLE_NAMES)[number];

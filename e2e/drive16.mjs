@@ -77,6 +77,26 @@ await step("key non valida → errore gestito, niente crash", async () => {
 });
 await page.screenshot({ path: path.join(SHOTS, "46-ai-section.png"), fullPage: false });
 
+await step("chiedi al sumo: input presente, errore gestito con key finta", async () => {
+  await page.waitForSelector('input[aria-label="Fai una domanda al sumo"]', {
+    visible: true,
+    timeout: 30000,
+  });
+  await new Promise((r) => setTimeout(r, 500));
+  await page.click('input[aria-label="Fai una domanda al sumo"]');
+  await page.keyboard.type("Posso permettermi 200 euro al mese di PAC?");
+  await page.waitForFunction(
+    () => document.querySelector('input[aria-label="Fai una domanda al sumo"]').value.length > 10,
+    { timeout: 10000 }
+  );
+  await clickText("button", "Chiedi");
+  // la sezione della domanda mostra il SUO errore (secondo box, stesso testo)
+  await page.waitForFunction(
+    () => document.querySelectorAll(".bg-warn-soft").length >= 2,
+    { timeout: 60000 }
+  );
+});
+
 await step("disattiva → torna la promo", async () => {
   await page.goto(`${BASE}/impostazioni`, { waitUntil: "networkidle2" });
   await clickText("button", "Disattiva");

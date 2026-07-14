@@ -319,6 +319,20 @@ export interface PriceHistoryCache {
   points: { t: number; p: number }[]; // timestamp ms, prezzo
 }
 
+/** Tombstone di una riga eliminata: viaggia nei backup/sync così le
+ *  cancellazioni si propagano tra dispositivi (sync v2, merge per riga).
+ *  id = "<tabella>:<id riga>". Potati dopo 90 giorni. */
+export interface Deletion {
+  id: string;
+  table: string;
+  rowId: string;
+  deletedAt: string; // ISO datetime
+}
+
+/** Nota sync v2: DexieAdapter timbra `updatedAt` (ISO) su ogni riga utente a
+ *  ogni scrittura; il merge per riga tiene la versione più recente. Il campo
+ *  è dinamico e opzionale: non è dichiarato nelle singole interfacce. */
+
 // ── Backup ──────────────────────────────────────────────────────────────────
 
 export interface BackupFile {

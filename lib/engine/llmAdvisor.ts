@@ -156,7 +156,7 @@ export function parseLlmAdvice(text: string): Advice[] {
     }));
 }
 
-async function callGemini(apiKey: string, summary: object): Promise<string> {
+async function callGemini(apiKey: string, promptText: string): Promise<string> {
   let lastErr = "";
   for (const model of GEMINI_MODELS) {
     const res = await fetch(
@@ -165,9 +165,7 @@ async function callGemini(apiKey: string, summary: object): Promise<string> {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
         body: JSON.stringify({
-          contents: [
-            { role: "user", parts: [{ text: `${PROMPT_INTRO}\n\nRiepilogo:\n${JSON.stringify(summary)}` }] },
-          ],
+          contents: [{ role: "user", parts: [{ text: promptText }] }],
           generationConfig: { temperature: 0.4, maxOutputTokens: 1500 },
         }),
         signal: AbortSignal.timeout(45000),
@@ -192,7 +190,7 @@ async function callGemini(apiKey: string, summary: object): Promise<string> {
   throw new Error(lastErr || "Nessun modello Gemini disponibile");
 }
 
-async function callAnthropic(apiKey: string, summary: object): Promise<string> {
+async function callAnthropic(apiKey: string, promptText: string): Promise<string> {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -205,9 +203,7 @@ async function callAnthropic(apiKey: string, summary: object): Promise<string> {
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
       max_tokens: 1500,
-      messages: [
-        { role: "user", content: `${PROMPT_INTRO}\n\nRiepilogo:\n${JSON.stringify(summary)}` },
-      ],
+      messages: [{ role: "user", content: promptText }],
     }),
     signal: AbortSignal.timeout(45000),
   });
@@ -232,9 +228,46 @@ export async function generateLlmAdvice(
   const apiKey = settings.aiApiKey?.trim();
   if (!provider || !apiKey) throw new Error("Configura provider e chiave in Impostazioni");
   const summary = buildFinancialSummary(data, derived);
+  const promptText = `${PROMPT_INTRO}\n\nRiepilogo:\n${JSON.stringify(summary)}`;
   const text =
-    provider === "gemini" ? await callGemini(apiKey, summary) : await callAnthropic(apiKey, summary);
+    provider === "gemini"
+      ? await callGemini(apiKey, promptText)
+      : await callAnthropic(apiKey, promptText);
   return { advice: parseLlmAdvice(text), generatedAt: new Date().toISOString(), provider };
+}
+
+const ASK_INTRO = `Sei "il Sumo", il consulente di un'app italiana di finanza personale local-first. Ricevi un riepilogo numerico aggregato della situazione dell'utente e UNA sua domanda.
+
+Regole ferree:
+- Rispondi SOLO sulla base dei numeri del riepilogo; se la domanda richiede dati che non hai, dillo chiaramente e suggerisci dove inserirli nell'app.
+- NON fare previsioni di mercato e NON suggerire singoli titoli o crypto specifiche.
+- Massimo 180 parole, tono calmo e concreto, in italiano. Racchiudi i numeri chiave tra ** (es. **1.200 €**).
+- Se la domanda non riguarda le finanze personali dell'utente, riportala con gentilezza sul tema.
+- Chiudi con un'azione concreta fattibile nell'app quando ha senso.
+
+Rispondi in testo semplice (niente markdown a parte i **grassetti**).`;
+
+/** Domanda libera al sumo sui propri numeri. Restituisce testo semplice. */
+export async function askSumo(
+  settings: Settings,
+  data: FinancialData,
+  derived: DerivedState,
+  question: string
+): Promise<string> {
+  const provider = settings.aiProvider;
+  const apiKey = settings.aiApiKey?.trim();
+  if (!provider || !apiKey) throw new Error("Configura provider e chiave in Impostazioni");
+  const q = question.trim().slice(0, 500);
+  if (q.length < 3) throw new Error("Scrivi una domanda");
+  const summary = buildFinancialSummary(data, derived);
+  const promptText = `${ASK_INTRO}\n\nRiepilogo:\n${JSON.stringify(summary)}\n\nDomanda dell'utente: ${q}`;
+  const text =
+    provider === "gemini"
+      ? await callGemini(apiKey, promptText)
+      : await callAnthropic(apiKey, promptText);
+  const cleaned = text.trim();
+  if (!cleaned) throw new Error("Risposta vuota dal modello: riprova");
+  return cleaned;
 }
 
 // ── cache: un'analisi al giorno per impronta dei dati ───────────────────────

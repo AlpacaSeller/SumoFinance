@@ -17,6 +17,7 @@
 import { storage } from "./storage";
 import { decryptBackup, encryptBackup, isEncryptedBackup } from "./cryptoBackup";
 import { clearSyncDirty, syncDirtyAt, withSyncDirtySuppressed } from "./syncDirty";
+import { mergeBackups } from "./syncMerge";
 import type { Settings } from "./types";
 
 const PASS_KEY = "pfos-sync-pass";
@@ -76,17 +77,14 @@ function remember(key: string, value: string): void {
   }
 }
 
-/** Cifra e deposita il dataset corrente. Lancia in caso di errore di rete. */
-export async function pushSync(): Promise<void> {
-  const s = await getSettings();
-  const pass = getPass();
-  if (!s?.syncId || !pass) return;
+/** Upload puro del dataset corrente (senza controlli di conflitto). */
+async function rawPush(syncId: string, pass: string): Promise<void> {
   const backup = await storage.exportAll();
   const envelope = await encryptBackup(backup, pass);
   const res = await fetch("/api/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ id: s.syncId, blob: JSON.stringify(envelope) }),
+    body: JSON.stringify({ id: syncId, blob: JSON.stringify(envelope) }),
   });
   if (!res.ok) {
     const j = (await res.json().catch(() => ({}))) as { error?: string };
@@ -98,11 +96,42 @@ export async function pushSync(): Promise<void> {
   clearSyncDirty();
 }
 
+/** Cifra e deposita il dataset corrente. Conflict-aware: se nel frattempo un
+ *  altro dispositivo ha spinto, prima FONDE (merge per riga) e poi carica —
+ *  un push non sovrascrive mai alla cieca il lavoro altrui. */
+export async function pushSync(): Promise<void> {
+  const s = await getSettings();
+  const pass = getPass();
+  if (!s?.syncId || !pass) return;
+
+  try {
+    const res = await fetch(`/api/sync?id=${s.syncId}`, { cache: "no-store" });
+    if (res.ok) {
+      const { blob, updatedAt } = (await res.json()) as { blob: string; updatedAt: string };
+      const known = localStorage.getItem(REMOTE_MARK_KEY);
+      if (updatedAt !== known) {
+        const parsed = JSON.parse(blob) as unknown;
+        if (isEncryptedBackup(parsed)) {
+          const remote = await decryptBackup(parsed, pass);
+          const local = await storage.exportAll();
+          const merged = mergeBackups(local, remote);
+          await withSyncDirtySuppressed(() => storage.importAll(merged));
+        }
+      }
+    }
+  } catch {
+    // remoto non leggibile: si procede col push del locale (meglio di niente)
+  }
+
+  await rawPush(s.syncId, pass);
+}
+
 export type SyncResult =
   | "disattivo"
   | "aggiornato" // niente da fare
   | "importato" // dati remoti più recenti importati
   | "spinto" // modifiche locali spinte
+  | "fuso" // conflitto risolto con merge per riga (v2)
   | "errore";
 
 /** Sincronizzazione all'apertura: decide da sola la direzione (LWW). */
@@ -133,17 +162,23 @@ export async function syncOnOpen(): Promise<SyncResult> {
     }
 
     // il remoto è cambiato (un altro dispositivo ha spinto)
-    const remoteMs = new Date(updatedAt).getTime();
-    if (dirtyAt > remoteMs) {
-      // modifiche locali più recenti del blob remoto: vince il locale
-      await pushSync();
-      return "spinto";
-    }
-    // vince il remoto: importa (senza marcare dirty)
     const parsed = JSON.parse(blob) as unknown;
     if (!isEncryptedBackup(parsed)) return "errore";
-    const backup = await decryptBackup(parsed, pass);
-    await withSyncDirtySuppressed(() => storage.importAll(backup));
+    const remote = await decryptBackup(parsed, pass);
+
+    if (dirtyAt > 0) {
+      // conflitto: modifiche su ENTRAMBI i lati → merge per riga (sync v2):
+      // nessuno perde i propri inserimenti, le eliminazioni si propagano
+      const local = await storage.exportAll();
+      const merged = mergeBackups(local, remote);
+      await withSyncDirtySuppressed(() => storage.importAll(merged));
+      clearSyncDirty();
+      await pushSync(); // il risultato fuso diventa la verità per tutti
+      return "fuso";
+    }
+
+    // solo il remoto è cambiato: importa (senza marcare dirty)
+    await withSyncDirtySuppressed(() => storage.importAll(remote));
     clearSyncDirty();
     remember(REMOTE_MARK_KEY, updatedAt);
     remember(LAST_SYNC_KEY, new Date().toISOString());
