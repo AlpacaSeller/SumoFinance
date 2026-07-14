@@ -2,9 +2,13 @@
 // Stateless: transita solo il ticker richiesto, nessun dato personale viene
 // ricevuto, registrato o inoltrato. L'endpoint Yahoo è non ufficiale e non
 // consente CORS: questo proxy aggiunge lo User-Agent e una cache di 15 minuti
-// (24 ore per lo storico a 1 anno).
+// (24 ore per lo storico). Due livelli: L1 in-memory (per istanza) e L2
+// condivisa su Supabase (per tutti gli utenti): una sola richiesta a Yahoo
+// per simbolo per finestra, chiunque la chieda. Se Yahoo fallisce si serve
+// la voce scaduta ("stale") piuttosto che niente.
 
 import { NextRequest, NextResponse } from "next/server";
+import { sharedCacheGet, sharedCacheSet } from "@/lib/server/sharedCache";
 
 interface CacheEntry {
   at: number;
@@ -33,7 +37,14 @@ export async function GET(req: NextRequest) {
   const ttl = range === "1d" ? TTL_QUOTE : TTL_HISTORY;
   const hit = cache.get(key);
   if (hit && Date.now() - hit.at < ttl) {
-    return NextResponse.json(hit.body);
+    return NextResponse.json(hit.body, { headers: { "X-Cache": "l1" } });
+  }
+
+  // L2 condivisa (Supabase): fresca → rispondi e scalda la L1
+  const shared = await sharedCacheGet(`quote:${key}`);
+  if (shared && shared.ageMs < ttl) {
+    cache.set(key, { at: Date.now() - shared.ageMs, body: shared.payload });
+    return NextResponse.json(shared.payload, { headers: { "X-Cache": "l2" } });
   }
 
   const interval =
@@ -51,6 +62,11 @@ export async function GET(req: NextRequest) {
       cache: "no-store",
     });
     if (!res.ok) {
+      // rate limit o errore server: servi la voce scaduta se esiste
+      if (res.status !== 404) {
+        if (shared) return NextResponse.json(shared.payload, { headers: { "X-Cache": "stale" } });
+        if (hit) return NextResponse.json(hit.body, { headers: { "X-Cache": "stale" } });
+      }
       return NextResponse.json(
         { error: `Yahoo ha risposto ${res.status} per "${symbol}"` },
         { status: res.status === 404 ? 404 : 502 }
@@ -83,8 +99,16 @@ export async function GET(req: NextRequest) {
 
     if (cache.size > MAX_CACHE) cache.clear();
     cache.set(key, { at: Date.now(), body });
-    return NextResponse.json(body);
+    await sharedCacheSet(`quote:${key}`, body);
+    return NextResponse.json(body, { headers: { "X-Cache": "miss" } });
   } catch {
+    // Yahoo giù o rate-limitato: meglio una voce scaduta che nessun prezzo
+    if (shared) {
+      return NextResponse.json(shared.payload, { headers: { "X-Cache": "stale" } });
+    }
+    if (hit) {
+      return NextResponse.json(hit.body, { headers: { "X-Cache": "stale" } });
+    }
     return NextResponse.json(
       { error: "Yahoo Finance non raggiungibile" },
       { status: 502 }

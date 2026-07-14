@@ -1,8 +1,10 @@
 // ── Proxy di sola lettura verso il feed pubblico di Forex Factory ──────────
 // Stateless: nessun dato personale transita. Il feed è rate-limitato
-// (~2 richieste/5 minuti) e cambia poco: cache lato server di 4 ore.
+// (~2 richieste/5 minuti) e cambia poco: cache di 4 ore su due livelli,
+// in-memory (per istanza) + condivisa su Supabase (per tutti gli utenti).
 
 import { NextRequest, NextResponse } from "next/server";
+import { sharedCacheGet, sharedCacheSet } from "@/lib/server/sharedCache";
 
 const FEEDS: Record<string, string> = {
   this: "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
@@ -21,7 +23,13 @@ export async function GET(req: NextRequest) {
   const week = req.nextUrl.searchParams.get("week") === "next" ? "next" : "this";
   const hit = cache.get(week);
   if (hit && Date.now() - hit.at < TTL) {
-    return NextResponse.json(hit.body);
+    return NextResponse.json(hit.body, { headers: { "X-Cache": "l1" } });
+  }
+
+  const shared = await sharedCacheGet(`ecocal:${week}`);
+  if (shared && shared.ageMs < TTL) {
+    cache.set(week, { at: Date.now() - shared.ageMs, body: shared.payload });
+    return NextResponse.json(shared.payload, { headers: { "X-Cache": "l2" } });
   }
 
   try {
@@ -32,7 +40,8 @@ export async function GET(req: NextRequest) {
     });
     if (!res.ok) {
       // se il feed rifiuta (rate limit), riusa la cache scaduta se esiste
-      if (hit) return NextResponse.json(hit.body);
+      if (shared) return NextResponse.json(shared.payload, { headers: { "X-Cache": "stale" } });
+      if (hit) return NextResponse.json(hit.body, { headers: { "X-Cache": "stale" } });
       return NextResponse.json(
         { error: `Il feed ha risposto ${res.status}` },
         { status: 502 }
@@ -50,9 +59,11 @@ export async function GET(req: NextRequest) {
     }));
     const body = { week, fetchedAt: new Date().toISOString(), events };
     cache.set(week, { at: Date.now(), body });
-    return NextResponse.json(body);
+    await sharedCacheSet(`ecocal:${week}`, body);
+    return NextResponse.json(body, { headers: { "X-Cache": "miss" } });
   } catch {
-    if (hit) return NextResponse.json(hit.body);
+    if (shared) return NextResponse.json(shared.payload, { headers: { "X-Cache": "stale" } });
+    if (hit) return NextResponse.json(hit.body, { headers: { "X-Cache": "stale" } });
     return NextResponse.json({ error: "Feed non raggiungibile" }, { status: 502 });
   }
 }
