@@ -49,6 +49,7 @@ import {
   MovementRows,
   RecurringSection,
   searchMovements,
+  TagTotalsCard,
   useMonthNav,
   type Movement,
 } from "@/components/movements";
@@ -347,6 +348,8 @@ export default function UscitePage() {
               <p className="py-8 text-center text-sm text-faint">Nessuna uscita in {nav.label}.</p>
             )}
           </Card>
+
+          <TagTotalsCard movements={data.expenses} kind="uscita" onTagClick={setQuery} />
 
           <Card>
             <RecurringSection

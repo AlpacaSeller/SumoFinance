@@ -39,6 +39,7 @@ import {
   MovementRows,
   RecurringSection,
   searchMovements,
+  TagTotalsCard,
   useMonthNav,
   type Movement,
 } from "@/components/movements";
@@ -250,6 +251,8 @@ export default function EntratePage() {
               </p>
             )}
           </Card>
+
+          <TagTotalsCard movements={data.incomes} kind="entrata" onTagClick={setQuery} />
 
           <Card>
             <RecurringSection

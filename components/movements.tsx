@@ -27,6 +27,7 @@ import { useToast, useUndoableDelete } from "@/components/toast";
 import {
   Badge,
   Button,
+  Card,
   Field,
   IconButton,
   Input,
@@ -40,22 +41,54 @@ export type MovementKind = "entrata" | "uscita";
 
 // ── Ricerca ed export ───────────────────────────────────────────────────────
 
-/** Filtra su descrizione e categoria, tutti i mesi, più recenti prima. */
+/** Filtra su descrizione, categoria e tag, tutti i mesi, più recenti prima. */
 export function searchMovements(movements: Movement[], query: string, cap = 100): Movement[] {
-  const q = query.trim().toLowerCase();
+  const q = query.trim().toLowerCase().replace(/^#/, "");
   if (q.length < 2) return [];
   return movements
     .filter(
-      (m) => m.description.toLowerCase().includes(q) || m.category.toLowerCase().includes(q)
+      (m) =>
+        m.description.toLowerCase().includes(q) ||
+        m.category.toLowerCase().includes(q) ||
+        (m.tags ?? []).some((t) => t.includes(q))
     )
     .sort((a, b) => b.date.localeCompare(a.date))
     .slice(0, cap);
 }
 
+/** "vacanza, Regali di Natale" → ["vacanza", "regali di natale"] */
+export function parseTags(input: string): string[] | undefined {
+  const tags = [
+    ...new Set(
+      input
+        .split(/[,;]/)
+        .map((t) => t.trim().replace(/^#/, "").replace(/\s+/g, " ").toLowerCase())
+        .filter((t) => t.length > 0 && t.length <= 40)
+    ),
+  ].slice(0, 8);
+  return tags.length > 0 ? tags : undefined;
+}
+
+/** Somme per tag (tutte le date), ordinate per importo decrescente. */
+export function tagTotals(movements: Movement[]): { tag: string; total: number; count: number }[] {
+  const acc = new Map<string, { total: number; count: number }>();
+  for (const m of movements) {
+    for (const t of m.tags ?? []) {
+      const cur = acc.get(t) ?? { total: 0, count: 0 };
+      cur.total += m.amount;
+      cur.count += 1;
+      acc.set(t, cur);
+    }
+  }
+  return [...acc.entries()]
+    .map(([tag, v]) => ({ tag, ...v }))
+    .sort((a, b) => b.total - a.total);
+}
+
 /** CSV it-IT (BOM + ";") di tutti i movimenti, per Excel. */
 export function buildMovementsCsv(movements: Movement[], kind: MovementKind): string {
   const esc = (s: string) => (/[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
-  const rows = ["Data;Descrizione;Categoria;Importo (€);Tipo;Origine"];
+  const rows = ["Data;Descrizione;Categoria;Importo (€);Tipo;Origine;Tag"];
   for (const m of [...movements].sort((a, b) => a.date.localeCompare(b.date))) {
     rows.push(
       [
@@ -65,6 +98,7 @@ export function buildMovementsCsv(movements: Movement[], kind: MovementKind): st
         m.amount.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
         kind,
         m.source ?? "manuale",
+        esc((m.tags ?? []).join(", ")),
       ].join(";")
     );
   }
@@ -147,6 +181,11 @@ export function MovementRows({
               )}
               {m.source === "auto" && <Badge tone="accent">auto</Badge>}
               {m.source === "import" && <Badge tone="neutral">import</Badge>}
+              {(m.tags ?? []).map((t) => (
+                <Badge key={t} tone="brand">
+                  #{t}
+                </Badge>
+              ))}
             </div>
           </div>
           <span
@@ -201,6 +240,7 @@ export function MovementModal({
   const [newCategory, setNewCategory] = useState("");
   const [amount, setAmount] = useState(base ? String(base.amount).replace(".", ",") : "");
   const [date, setDate] = useState(base?.date ?? todayISO());
+  const [tagsInput, setTagsInput] = useState(base?.tags?.join(", ") ?? "");
   const [dupConfirm, setDupConfirm] = useState(false);
   const table = kind === "entrata" ? "incomes" : "expenses";
   const rules = useTable<ImportRule>("importRules");
@@ -265,6 +305,7 @@ export function MovementModal({
       source: base?.source ?? "manuale",
       sourceRef: base?.sourceRef,
       fingerprint: base?.fingerprint ?? fp,
+      tags: parseTags(tagsInput),
     };
     await storage.put(table, movement);
     showToast(isNew ? `${kind === "entrata" ? "Entrata" : "Uscita"} aggiunta` : "Movimento aggiornato", {
@@ -330,6 +371,16 @@ export function MovementModal({
             <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
         </div>
+        <Field
+          label="Tag (facoltativi)"
+          hint="Etichette trasversali alle categorie, separate da virgola: le ritrovi nella ricerca e nei totali per tag"
+        >
+          <Input
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="es. vacanza giappone, regali"
+          />
+        </Field>
         <ModalFooter>
           <Button type="button" variant="outline" onClick={onClose}>
             Annulla
@@ -340,6 +391,47 @@ export function MovementModal({
         </ModalFooter>
       </form>
     </Modal>
+  );
+}
+
+// ── Totali per tag ──────────────────────────────────────────────────────────
+
+/** Card con le somme per tag (compare solo se esiste almeno un tag). */
+export function TagTotalsCard({
+  movements,
+  kind,
+  onTagClick,
+}: {
+  movements: Movement[];
+  kind: MovementKind;
+  onTagClick?: (tag: string) => void;
+}) {
+  const totals = tagTotals(movements);
+  if (totals.length === 0) return null;
+  return (
+    <Card
+      title="Totali per tag"
+      subtitle="Somme di tutti i movimenti etichettati, trasversali a mesi e categorie"
+    >
+      <ul className="flex flex-wrap gap-2">
+        {totals.map(({ tag, total, count }) => (
+          <li key={tag}>
+            <button
+              onClick={() => onTagClick?.(tag)}
+              className="flex min-h-9 items-center gap-2 rounded-full border border-line bg-surface-2 px-3 py-1 text-sm hover:border-line-strong"
+              title={`${count} moviment${count === 1 ? "o" : "i"} — clicca per filtrare`}
+            >
+              <span className="font-medium text-brand-ink">#{tag}</span>
+              <span className={`tnum text-xs font-semibold ${kind === "entrata" ? "text-pos" : "text-neg"}`}>
+                {kind === "entrata" ? "+" : "−"}
+                {fmtEUR(total)}
+              </span>
+              <span className="text-xs text-faint">×{count}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 

@@ -186,6 +186,7 @@ export interface Income {
   sourceRef?: string; // idempotenza generazioni automatiche: "rec:<id>:<periodo>"
   fingerprint?: string; // dedupe import CSV
   importBatch?: string; // id del lotto di import CSV (per l'annullo di gruppo)
+  tags?: string[]; // etichette libere trasversali alle categorie ("vacanza giappone")
 }
 
 export interface Expense {
@@ -198,6 +199,7 @@ export interface Expense {
   sourceRef?: string;
   fingerprint?: string;
   importBatch?: string;
+  tags?: string[];
 }
 
 export interface Subscription {
