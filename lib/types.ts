@@ -291,6 +291,8 @@ export interface Snapshot {
   liquidity: number;
   investments: number;
   debts: number;
+  /** indice di salute finanziaria 0–100 al momento dello snapshot */
+  health?: number;
 }
 
 export interface EconomicEvent {

@@ -1,0 +1,16 @@
+# Aggiornamenti automatici delle dipendenze: la CI (lint+test+build+e2e)
+# fa da rete di sicurezza su ogni PR aperta da Dependabot.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minori:
+        update-types: ["minor", "patch"]
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly

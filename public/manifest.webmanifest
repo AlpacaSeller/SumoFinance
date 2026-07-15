@@ -8,6 +8,23 @@
   "background_color": "#f7f2e9",
   "theme_color": "#17444a",
   "lang": "it",
+  "shortcuts": [
+    {
+      "name": "Nuova uscita",
+      "url": "/uscite?new=1",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Investimenti",
+      "url": "/investimenti",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Consigli del sumo",
+      "url": "/consigli",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

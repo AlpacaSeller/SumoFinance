@@ -92,6 +92,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Subscription non valida" }, { status: 400 });
   }
   try {
+    // quota anti-griefing: endpoint NUOVI rifiutati oltre soglia
+    const existing = await sb(
+      `push_subscriptions?endpoint=eq.${encodeURIComponent(endpoint)}&select=endpoint`
+    );
+    const isNew = existing.ok && ((await existing.json()) as unknown[]).length === 0;
+    if (isNew) {
+      const head = await sb("push_subscriptions?select=endpoint&limit=1", {
+        headers: { Prefer: "count=exact" },
+      });
+      const total = Number(head.headers.get("content-range")?.split("/")[1] ?? 0);
+      if (total >= 2000) {
+        return NextResponse.json(
+          { error: "Registro notifiche al completo: riprova più avanti" },
+          { status: 503 }
+        );
+      }
+    }
     const res = await sb("push_subscriptions?on_conflict=endpoint", {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates" },

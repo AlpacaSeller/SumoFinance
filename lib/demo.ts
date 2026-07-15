@@ -410,6 +410,7 @@ export function generateDemoData(today: Date = new Date()): DemoData {
       liquidity: round2(net + prestito.residual - inv),
       investments: inv,
       debts: prestito.residual,
+      health: Math.min(100, Math.round(54 + progress * 18 + (rand() - 0.5) * 4)),
     });
   }
   // ultimo snapshot: ieri, coerente coi numeri attuali
@@ -424,6 +425,7 @@ export function generateDemoData(today: Date = new Date()): DemoData {
       liquidity,
       investments,
       debts: prestito.residual,
+      health: 71,
     });
   }
 

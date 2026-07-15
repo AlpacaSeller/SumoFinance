@@ -22,6 +22,7 @@ import {
   type ImportProfile,
   type ImportRule,
   type Income,
+  type Settings,
 } from "@/lib/types";
 import { fmtDate, fmtEUR } from "@/lib/format";
 import { useToast } from "./toast";
@@ -75,6 +76,62 @@ export function CsvImportWizard({
 
   // passo 3: righe
   const [rows, setRows] = useState<RowState[]>([]);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  /** Righe valide rimaste in "Altro" senza regola: candidate per l'AI. */
+  const aiCandidates = rows.filter(
+    (r) => r.valid && !r.duplicate && !r.fromRule && r.categoryFinal === "Altro"
+  );
+
+  async function categorizeWithAi() {
+    setAiBusy(true);
+    try {
+      const settings = await storage.get<Settings>("settings", "main");
+      if (!settings?.aiProvider || !settings.aiApiKey) {
+        showToast("Configura i Consigli AI in Impostazioni per usare la categorizzazione", {
+          kind: "error",
+          duration: 7000,
+        });
+        return;
+      }
+      const { categorizeDescriptions } = await import("@/lib/engine/llmAdvisor");
+      const proposals = await categorizeDescriptions(
+        settings,
+        aiCandidates.map((r) => r.description.trim()),
+        [...new Set([...expenseCategories, ...incomeCategories])]
+      );
+      let applied = 0;
+      setRows((prev) =>
+        prev.map((r) => {
+          const cat = proposals[r.description.trim()];
+          if (
+            cat &&
+            cat !== "Altro" &&
+            r.valid &&
+            !r.duplicate &&
+            !r.fromRule &&
+            r.categoryFinal === "Altro"
+          ) {
+            applied++;
+            return { ...r, categoryFinal: cat };
+          }
+          return r;
+        })
+      );
+      showToast(
+        applied > 0
+          ? `L'AI ha proposto la categoria per ${applied} righe: controlla e correggi dove serve`
+          : "L'AI non ha trovato categorie migliori di «Altro» per queste righe",
+        { kind: applied > 0 ? "success" : "info", duration: 7000 }
+      );
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Categorizzazione non riuscita", {
+        kind: "error",
+      });
+    } finally {
+      setAiBusy(false);
+    }
+  }
   const [localRules, setLocalRules] = useState<ImportRule[]>(rules);
   const [ruleFor, setRuleFor] = useState<RowState | null>(null);
 
@@ -413,6 +470,12 @@ export function CsvImportWizard({
             <Badge tone="warn">{rows.filter((r) => r.duplicate).length} duplicati ignorati</Badge>
             {rows.some((r) => !r.valid) && (
               <Badge tone="neg">{rows.filter((r) => !r.valid).length} righe non valide</Badge>
+            )}
+            {aiCandidates.length > 0 && (
+              <Button variant="outline" onClick={() => void categorizeWithAi()} disabled={aiBusy}>
+                <Sparkles className="size-4" />
+                {aiBusy ? "Il sumo classifica…" : `Categorizza con l'AI (${aiCandidates.length})`}
+              </Button>
             )}
           </div>
           {/* mobile: card list */}

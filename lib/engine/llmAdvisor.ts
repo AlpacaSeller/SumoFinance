@@ -270,6 +270,35 @@ export async function askSumo(
   return cleaned;
 }
 
+// ── Categorizzazione batch delle descrizioni (import CSV) ───────────────────
+
+/** Propone una categoria per ogni descrizione (una sola chiamata batch).
+ *  All'AI vanno SOLO le descrizioni, mai importi o date. */
+export async function categorizeDescriptions(
+  settings: Settings,
+  descriptions: string[],
+  categories: string[]
+): Promise<Record<string, string>> {
+  const provider = settings.aiProvider;
+  const apiKey = settings.aiApiKey?.trim();
+  if (!provider || !apiKey) throw new Error("Configura provider e chiave in Impostazioni");
+  const unique = [...new Set(descriptions.map((d) => d.trim()).filter(Boolean))].slice(0, 120);
+  if (unique.length === 0) return {};
+  const prompt = `Sei il classificatore di un'app italiana di finanza personale. Per OGNI descrizione di movimento bancario nell'array, scegli la categoria più adatta tra: [${categories.map((c) => `"${c}"`).join(", ")}].
+Rispondi SOLO con un oggetto JSON {"descrizione esatta": "categoria", ...} — usa le descrizioni ESATTAMENTE come fornite come chiavi. Se davvero non riesci a classificare, usa "Altro".
+Descrizioni:
+${JSON.stringify(unique)}`;
+  const text =
+    provider === "gemini" ? await callGemini(apiKey, prompt) : await callAnthropic(apiKey, prompt);
+  const obj = parseJsonObject(text);
+  const out: Record<string, string> = {};
+  for (const d of unique) {
+    const cat = obj[d];
+    if (typeof cat === "string" && categories.includes(cat)) out[d] = cat;
+  }
+  return out;
+}
+
 // ── Scontrino → movimento (vision) ──────────────────────────────────────────
 
 export interface ReceiptDraft {

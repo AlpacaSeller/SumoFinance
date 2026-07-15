@@ -81,6 +81,22 @@ export async function POST(req: NextRequest) {
   }
   const updatedAt = new Date().toISOString();
   try {
+    // quota anti-griefing: gli id NUOVI vengono rifiutati oltre la soglia
+    // (gli aggiornamenti di blob esistenti passano sempre)
+    const existing = await sb(`sync_blobs?id=eq.${id}&select=id`);
+    const isNew = existing.ok && ((await existing.json()) as unknown[]).length === 0;
+    if (isNew) {
+      const head = await sb("sync_blobs?select=id&limit=1", {
+        headers: { Prefer: "count=exact" },
+      });
+      const total = Number(head.headers.get("content-range")?.split("/")[1] ?? 0);
+      if (total >= 2000) {
+        return NextResponse.json(
+          { error: "Deposito sync al completo: riprova più avanti" },
+          { status: 503 }
+        );
+      }
+    }
     const res = await sb("sync_blobs?on_conflict=id", {
       method: "POST",
       headers: { Prefer: "resolution=merge-duplicates" },

@@ -20,8 +20,12 @@ function byCategory(rows: { category: string; amount: number }[]): [string, numb
 
 export function buildAnnualReportHtml(data: FinancialData, year: number): string {
   const inYear = (date: string) => date.startsWith(String(year));
+  const inPrev = (date: string) => date.startsWith(String(year - 1));
   const incomes = data.incomes.filter((i) => inYear(i.date));
   const expenses = data.expenses.filter((e) => inYear(e.date));
+  const prevInCat = new Map(byCategory(data.incomes.filter((i) => inPrev(i.date))));
+  const prevOutCat = new Map(byCategory(data.expenses.filter((e) => inPrev(e.date))));
+  const hasPrev = prevInCat.size + prevOutCat.size > 0;
   const totIn = incomes.reduce((s, i) => s + i.amount, 0);
   const totOut = expenses.reduce((s, e) => s + e.amount, 0);
   const saved = totIn - totOut;
@@ -49,15 +53,36 @@ export function buildAnnualReportHtml(data: FinancialData, year: number): string
     0
   );
 
-  const catRows = (rows: [string, number][], tot: number) =>
+  const yoy = (
+    cat: string,
+    v: number,
+    prev: Map<string, number>,
+    goodWhenDown: boolean
+  ): string => {
+    if (!hasPrev) return "";
+    const p = prev.get(cat);
+    if (p == null || p === 0) return `<td class="num">nuova</td>`;
+    const delta = ((v - p) / p) * 100;
+    const good = goodWhenDown ? delta <= 0 : delta >= 0;
+    return `<td class="num ${good ? "pos" : "neg"}">${delta > 0 ? "+" : ""}${pct(delta)}</td>`;
+  };
+
+  const catRows = (
+    rows: [string, number][],
+    tot: number,
+    prev: Map<string, number>,
+    goodWhenDown: boolean
+  ) =>
     rows
       .map(
         ([cat, v]) =>
           `<tr><td>${esc(cat)}</td><td class="num">${eur(v)}</td><td class="num">${
             tot > 0 ? pct((v / tot) * 100) : "—"
-          }</td><td class="num">${monthsWithData > 0 ? eur0(v / monthsWithData) : "—"}</td></tr>`
+          }</td><td class="num">${monthsWithData > 0 ? eur0(v / monthsWithData) : "—"}</td>${yoy(cat, v, prev, goodWhenDown)}</tr>`
       )
       .join("");
+
+  const yoyHead = hasPrev ? `<th class="num">vs ${year - 1}</th>` : "";
 
   return `<!doctype html>
 <html lang="it"><head><meta charset="utf-8">
@@ -100,12 +125,12 @@ export function buildAnnualReportHtml(data: FinancialData, year: number): string
   </div>
 
   <h2>Entrate per categoria</h2>
-  <table><thead><tr><th>Categoria</th><th class="num">Totale</th><th class="num">Quota</th><th class="num">Media/mese</th></tr></thead>
-  <tbody>${catRows(inCat, totIn) || '<tr><td colspan="4">Nessuna entrata registrata.</td></tr>'}</tbody></table>
+  <table><thead><tr><th>Categoria</th><th class="num">Totale</th><th class="num">Quota</th><th class="num">Media/mese</th>${yoyHead}</tr></thead>
+  <tbody>${catRows(inCat, totIn, prevInCat, false) || '<tr><td colspan="5">Nessuna entrata registrata.</td></tr>'}</tbody></table>
 
   <h2>Uscite per categoria</h2>
-  <table><thead><tr><th>Categoria</th><th class="num">Totale</th><th class="num">Quota</th><th class="num">Media/mese</th></tr></thead>
-  <tbody>${catRows(outCat, totOut) || '<tr><td colspan="4">Nessuna uscita registrata.</td></tr>'}</tbody></table>
+  <table><thead><tr><th>Categoria</th><th class="num">Totale</th><th class="num">Quota</th><th class="num">Media/mese</th>${yoyHead}</tr></thead>
+  <tbody>${catRows(outCat, totOut, prevOutCat, true) || '<tr><td colspan="5">Nessuna uscita registrata.</td></tr>'}</tbody></table>
 
   <h2>Le 10 spese più grandi</h2>
   <table><thead><tr><th>Data</th><th>Descrizione</th><th>Categoria</th><th class="num">Importo</th></tr></thead>

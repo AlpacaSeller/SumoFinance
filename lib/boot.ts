@@ -121,6 +121,46 @@ export async function takeDailySnapshot(): Promise<boolean> {
   // niente snapshot per un'app completamente vuota
   if (accounts.length === 0 && assets.length === 0 && debts.length === 0) return false;
   const agg = computeAggregates(accounts, assets, debts);
+
+  // indice di salute del giorno: rende visibile il TREND, non solo il valore
+  let health: number | undefined;
+  try {
+    const [settings, incomes, expenses, subscriptions, recurring, goals, calendarItems, snapshots, taxState, assetTransactions] =
+      await Promise.all([
+        storage.get<Settings>("settings", "main"),
+        storage.list<Income>("incomes"),
+        storage.list<Expense>("expenses"),
+        storage.list<Subscription>("subscriptions"),
+        storage.list<RecurringTransaction>("recurringTransactions"),
+        storage.list<import("./types").Goal>("goals"),
+        storage.list<CalendarItem>("calendarItems"),
+        storage.list<Snapshot>("snapshots"),
+        storage.get<TaxState>("taxState", "main"),
+        storage.list<import("./types").AssetTransaction>("assetTransactions"),
+      ]);
+    if (settings && taxState) {
+      const { computeDerived } = await import("./engine/state");
+      const derived = computeDerived({
+        settings,
+        accounts,
+        assets,
+        assetTransactions,
+        debts,
+        incomes,
+        expenses,
+        subscriptions,
+        recurring,
+        goals,
+        calendarItems,
+        snapshots,
+        taxState,
+      });
+      health = derived.health.total;
+    }
+  } catch {
+    // la salute è un extra: lo snapshot patrimoniale si salva comunque
+  }
+
   await storage.put<Snapshot>("snapshots", {
     id: today,
     date: today,
@@ -129,6 +169,7 @@ export async function takeDailySnapshot(): Promise<boolean> {
     liquidity: agg.liquidity,
     investments: agg.investments,
     debts: agg.debts,
+    health,
   });
   return true;
 }

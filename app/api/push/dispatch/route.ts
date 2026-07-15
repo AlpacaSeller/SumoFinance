@@ -110,6 +110,18 @@ export async function GET(req: NextRequest) {
   );
 
   const today = todayRome();
+
+  // pulizia giornaliera: blob sync abbandonati (>180gg) e subscription morte
+  // (>120gg senza aggiornamenti: i client attivi ri-depositano a ogni apertura)
+  const cutBlobs = new Date(Date.now() - 180 * 86400000).toISOString();
+  const cutSubs = new Date(Date.now() - 120 * 86400000).toISOString();
+  await sb(`sync_blobs?updated_at=lt.${encodeURIComponent(cutBlobs)}`, { method: "DELETE" }).catch(
+    () => undefined
+  );
+  await sb(`push_subscriptions?updated_at=lt.${encodeURIComponent(cutSubs)}`, {
+    method: "DELETE",
+  }).catch(() => undefined);
+
   const res = await sb("push_subscriptions?select=endpoint,subscription,reminders,alerts,last_sent");
   if (!res.ok) {
     return NextResponse.json({ error: "Deposito non raggiungibile" }, { status: 502 });

@@ -51,6 +51,56 @@ const RANGE_DAYS: Record<Range, number> = {
   "10a": 3652,
 };
 
+/** Trend dell'indice di salute dagli snapshot (ultimi 90 giorni). */
+function HealthSparkline({
+  snapshots,
+  current,
+}: {
+  snapshots: { date: string; health?: number }[];
+  current: number;
+}) {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffISO = cutoff.toISOString().slice(0, 10);
+  const points = snapshots
+    .filter((s) => s.health != null && s.date >= cutoffISO)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((s) => s.health as number);
+  if (points.length < 2) return null;
+  const first = points[0];
+  const delta = current - first;
+  const w = 120;
+  const h = 28;
+  const min = Math.min(...points, current);
+  const max = Math.max(...points, current);
+  const span = Math.max(1, max - min);
+  const coords = [...points, current]
+    .map((v, i, arr) => `${((i / (arr.length - 1)) * w).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`)
+    .join(" ");
+  return (
+    <div
+      className="flex items-center gap-2"
+      title={`Indice di salute negli ultimi 90 giorni: da ${first} a ${current}`}
+    >
+      <svg width={w} height={h} className="overflow-visible" aria-hidden>
+        <polyline
+          points={coords}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinejoin="round"
+          strokeLinecap="round"
+          className={delta >= 0 ? "text-pos" : "text-warn"}
+        />
+      </svg>
+      <span className={`tnum text-xs font-semibold ${delta >= 0 ? "text-pos" : "text-warn"}`}>
+        {delta > 0 ? "+" : ""}
+        {delta} in 90g
+      </span>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { ready, data, derived } = useFinancial();
   const [range, setRange] = useState<Range>("6m");
@@ -319,6 +369,7 @@ export default function DashboardPage() {
                 {d.health.total}
               </div>
               <div className="text-xs text-faint">su 100</div>
+              <HealthSparkline snapshots={data.snapshots} current={d.health.total} />
               <HealthRadar
                 data={d.health.subscores.map((s) => ({ label: s.label, score: s.score }))}
               />

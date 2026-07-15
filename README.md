@@ -33,6 +33,18 @@ Solida e ben piantata come un sumo: il lottatore del logo è la mascotte dell'ap
 - **Modalità demo** ("Prova con dati d'esempio" nell'onboarding): 9 mesi di storia
   finanziaria realistica per esplorare l'app senza inserire dati veri
 - **Pagina Privacy e termini** in-app: la promessa local-first spiegata per esteso
+- **Sync E2E tra dispositivi** senza account: codice + passphrase (anche via QR), blob
+  cifrato AES-256 sul cloud, merge per riga con propagazione delle eliminazioni
+- **Consigli AI "il sumo"** (BYOK: la tua key Gemini — gratis — o Claude): analisi
+  personalizzate, domande libere, scontrino → movimento da una foto, categorizzazione
+  AI dell'import CSV
+- **Notifiche push** mattutine per scadenze, rate, cedole e alert di prezzo; badge
+  con le scadenze di oggi sull'icona
+- **Face ID/impronta** per lo sblocco (WebAuthn on-device, PIN come fallback) e
+  "aggiungi spesa con Siri" via deep-link per i Comandi rapidi
+- **BTP e obbligazioni**: scadenza e cedola → cedole automatiche nel calendario e
+  rendimento a scadenza; TWR accanto allo XIRR; tag liberi; report annuale con
+  confronto anno-su-anno e trend dell'indice di salute
 
 ## Avvio
 
