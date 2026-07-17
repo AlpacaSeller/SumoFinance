@@ -61,6 +61,33 @@
   color-scheme: dark;
 }
 
+/* ── Ottimizzazioni touch/mobile ─────────────────────────────────────────────
+   1. iOS Safari zooma automaticamente sugli input con font < 16px e spesso
+      non torna indietro (pagina "scentrata"): sui dispositivi touch tutti i
+      campi salgono a 16px. !important perché le utility Tailwind (text-sm)
+      hanno specificità di classe.
+   2. touch-action: manipulation elimina lo zoom da doppio tap (resta il
+      pinch) e il ritardo sul tap.
+   3. overflow-x clip: cintura di sicurezza contro lo scroll orizzontale
+      accidentale (gli overflow veri si scovano con l'audit e2e). */
+@media (hover: none) and (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  touch-action: manipulation;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
 /* immagini legate al tema (mark del sumo: teal al chiaro, chiaro al buio) */
 :root[data-theme="dark"] .theme-light-only {
   display: none;

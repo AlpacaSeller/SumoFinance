@@ -96,7 +96,7 @@ export default function ImpostazioniPage() {
               <p className="mt-1">
                 <strong className="text-ink">Spesa con Siri:</strong> crea un Comando rapido
                 che apre l&apos;URL{" "}
-                <code className="rounded bg-surface-2 px-1 text-[11px]">
+                <code className="break-all rounded bg-surface-2 px-1 text-[11px]">
                   {"https://sumo-finance.vercel.app/uscite?new=1&desc=[Testo]&importo=[Importo]"}
                 </code>{" "}
                 con &quot;Chiedi ogni volta&quot; sui due campi: detti descrizione e importo, si

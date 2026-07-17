@@ -36,7 +36,7 @@ jobs:
         id: chrome
       - run: npm ci
       - run: npm run build
-      - run: npm run e2e drive13 drive14 drive17 drive18
+      - run: npm run e2e drive13 drive14 drive17 drive18 drive21
         env:
           CHROME_PATH: ${{ steps.chrome.outputs.chrome-path }}
       - uses: actions/upload-artifact@v4

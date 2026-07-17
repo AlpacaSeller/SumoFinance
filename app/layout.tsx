@@ -53,6 +53,10 @@ export const viewport: Viewport = {
   themeColor: "#17444a",
   width: "device-width",
   initialScale: 1,
+  // iOS: senza maximum-scale Safari zooma da solo sugli input e la pagina
+  // resta "scentrata". Il pinch-zoom dell'utente resta possibile (iOS lo
+  // ignora per i gesti di accessibilità): blocca solo lo zoom automatico.
+  maximumScale: 1,
   viewportFit: "cover", // safe area su iPhone (notch e home indicator)
 };
 
