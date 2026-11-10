@@ -5,7 +5,6 @@ prezzi live, debiti, obiettivi, simulazioni Monte Carlo/FIRE, tasse italiane sem
 calendario finanziario ed economico. Interfaccia in italiano, valuta EUR, formato it-IT.
 Solida e ben piantata come un sumo: il lottatore del logo è la mascotte dell'app.
 
-> Nato come "PFOS — Personal Financial OS": il nome interno `pfos` sopravvive in database,
 > chiavi locali e cache per compatibilità con i dati e i backup esistenti.
 
 **Demo in produzione:** https://sumo-finance.vercel.app
@@ -159,10 +158,6 @@ Impostazioni), shell funzionante offline. Il service worker si registra in produ
   chiaro e scuro; contrasti dei token verificati ≥ 4,5:1
 - Le scelte architetturali e di prodotto sono documentate in `DECISIONS.md`
 
-## Licenza
-
-Codice pubblicato a scopo di consultazione: **tutti i diritti riservati** (vedi `LICENSE`).
-Non è concesso il riuso senza autorizzazione scritta.
 
 ## Disclaimer
 
